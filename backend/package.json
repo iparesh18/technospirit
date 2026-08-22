@@ -1,0 +1,15 @@
+{
+  "name": "technospirit-backend",
+  "version": "0.1.0",
+  "private": true,
+  "description": "TechnoSpirit API — scaffold only. Not implemented in Phase 1.",
+  "type": "module",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js"
+  },
+  "keywords": [],
+  "author": "TechnoSpirit",
+  "license": "UNLICENSED"
+}

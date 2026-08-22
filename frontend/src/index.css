@@ -1,0 +1,703 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+/* Self-hosted variable fonts — no external CDN dependency at runtime.
+   Archivo ships wght 100..900 AND wdth 62%..125%; the width axis is the
+   art direction, so the wdth build is the one we load. */
+@import "@fontsource-variable/archivo/wdth.css";
+@import "@fontsource-variable/jetbrains-mono/wght.css";
+
+/* ==========================================================================
+   TECHNOSPIRIT — DESIGN SYSTEM
+   Direction: Swiss Modernism 2.0 x Minimalist Monochrome
+   WHITE = space | BLACK = structure | RED = signal
+   Zero radius. No shadows. Hard rules. Typography is the interface.
+   ========================================================================== */
+
+@custom-variant dark (&:is(.dark *));
+
+@theme {
+    /* — Palette ————————————————————————————————— */
+    --color-paper: #ffffff;
+    --color-ink: #000000;
+    --color-signal: #ff2d16;      /* graphics / large type / indicators (3.7:1 on paper) */
+    --color-signal-ink: #d91a05;  /* small red text on paper (5.1:1) */
+    --color-ash: #6b6b6b;         /* muted text on paper (5.4:1) */
+    --color-ash-dim: #9a9a9a;
+    --color-hair: #e4e4e4;        /* hairline on paper */
+    --color-smoke: #f4f4f4;
+
+    /* — Type ——————————————————————————————————— */
+    --font-display: "Archivo Variable", "Archivo", "Helvetica Neue", Helvetica, Arial, sans-serif;
+    --font-sans: "Archivo Variable", "Archivo", "Helvetica Neue", Helvetica, Arial, sans-serif;
+    --font-mono: "JetBrains Mono Variable", "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+
+    /* — Rhythm (8px base, spacious marketing scale) ——————— */
+    --spacing-gut: 1.5rem;
+    --spacing-bay: 4rem;
+    --spacing-act: 8rem;
+
+    /* — Motion ————————————————————————————————— */
+    --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+    --ease-in-out-quint: cubic-bezier(0.83, 0, 0.17, 1);
+
+    --radius: 0px;
+}
+
+/* shadcn token contract, re-pointed at the TechnoSpirit palette ------------ */
+@theme inline {
+    --font-heading: var(--font-display);
+    --color-background: var(--bg);
+    --color-foreground: var(--fg);
+    --color-card: var(--bg);
+    --color-card-foreground: var(--fg);
+    --color-popover: var(--bg);
+    --color-popover-foreground: var(--fg);
+    --color-primary: var(--fg);
+    --color-primary-foreground: var(--bg);
+    --color-secondary: var(--subtle);
+    --color-secondary-foreground: var(--fg);
+    --color-muted: var(--subtle);
+    --color-muted-foreground: var(--fg-muted);
+    --color-accent: var(--subtle);
+    --color-accent-foreground: var(--fg);
+    --color-destructive: var(--color-signal);
+    --color-border: var(--line);
+    --color-input: var(--line);
+    --color-ring: var(--color-signal);
+    --radius-sm: 0px;
+    --radius-md: 0px;
+    --radius-lg: 0px;
+    --radius-xl: 0px;
+}
+
+/* Zone tokens. Every section declares its ground; shadcn primitives,
+   borders and focus rings adapt automatically. ---------------------------- */
+:root,
+[data-zone="paper"] {
+    --bg: #ffffff;
+    --fg: #000000;
+    --fg-muted: #6b6b6b;
+    --line: #e4e4e4;
+    --line-strong: #000000;
+    --subtle: #f4f4f4;
+    --red-text: #d91a05;
+}
+
+[data-zone="ink"] {
+    --bg: #000000;
+    --fg: #ffffff;
+    --fg-muted: #8f8f8f;
+    --line: rgba(255, 255, 255, 0.16);
+    --line-strong: #ffffff;
+    --subtle: #111111;
+    --red-text: #ff2d16;
+    color-scheme: dark;
+}
+
+@layer base {
+    *,
+    *::before,
+    *::after {
+        border-color: var(--line);
+    }
+
+    html {
+        -webkit-text-size-adjust: 100%;
+        /* WCAG 2.2 "Focus Not Obscured": keep focus clear of the fixed header */
+        scroll-padding-top: 6rem;
+    }
+
+    body {
+        background: var(--bg);
+        color: var(--fg);
+        font-family: var(--font-sans);
+        font-synthesis-weight: none;
+        text-rendering: optimizeLegibility;
+        -webkit-font-smoothing: antialiased;
+        /* clip (not hidden) so position:sticky keeps working */
+        overflow-x: clip;
+    }
+
+    ::selection {
+        background: var(--color-signal);
+        color: #ffffff;
+    }
+
+    /* Hard-edged, unmistakable focus ring — never removed, only restyled */
+    :focus-visible {
+        outline: 2px solid var(--color-signal);
+        outline-offset: 3px;
+    }
+
+    h1, h2, h3, h4 {
+        font-weight: 800;
+        text-wrap: balance;
+    }
+
+    button, a {
+        -webkit-tap-highlight-color: transparent;
+    }
+}
+
+/* ==========================================================================
+   TYPOGRAPHY — the Archivo wdth (62..125) axis is the art direction
+   ========================================================================== */
+@utility ts-display {
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-stretch: 92%;
+    letter-spacing: -0.045em;
+    line-height: 0.82;
+    text-transform: uppercase;
+}
+
+/* Compressed cut for the giant full-bleed statements */
+@utility ts-display-tight {
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-stretch: 78%;
+    letter-spacing: -0.05em;
+    line-height: 0.8;
+    text-transform: uppercase;
+}
+
+/* Expanded cut — used sparingly, for the wordmark and section stamps */
+@utility ts-display-wide {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-stretch: 118%;
+    letter-spacing: -0.02em;
+    line-height: 0.9;
+    text-transform: uppercase;
+}
+
+/* System microcopy: coordinates, node IDs, status labels */
+@utility ts-label {
+    font-family: var(--font-mono);
+    font-weight: 500;
+    /* floor at 11px — mono uppercase below that stops being readable */
+    font-size: clamp(0.6875rem, 0.72vw, 0.75rem);
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    line-height: 1;
+}
+
+@utility ts-body {
+    font-family: var(--font-sans);
+    font-weight: 400;
+    font-stretch: 100%;
+    letter-spacing: -0.011em;
+    line-height: 1.55;
+}
+
+/* ==========================================================================
+   STRUCTURE
+   ========================================================================== */
+@utility ts-shell {
+    width: 100%;
+    margin-inline: auto;
+    padding-inline: clamp(1.25rem, 4vw, 4.5rem);
+    max-width: 108rem;
+}
+
+/* 12-column strict grid (Swiss Modernism 2.0) */
+@utility ts-grid {
+    display: grid;
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    gap: clamp(1rem, 1.6vw, 1.75rem);
+}
+
+/* ── Vertical rhythm ─────────────────────────────────────────────────────
+   One place that owns section padding. The page is meant to read dense and
+   cinematic, so the scale tops out at ~104px rather than the 160px the
+   sections used to hard-code (py-24 sm:py-32 lg:py-40). Change it here and
+   every section moves together. */
+@utility ts-act {
+    padding-block: clamp(3.25rem, 6vw, 6.5rem);
+}
+
+/* Half-beat: used where two related sections sit back to back */
+@utility ts-act-sm {
+    padding-block: clamp(2.25rem, 4vw, 4rem);
+}
+
+/* Opening beat: clears the fixed header, then behaves like ts-act */
+@utility ts-act-open {
+    padding-top: clamp(6.5rem, 10vw, 9.5rem);
+    padding-bottom: clamp(2.75rem, 4.5vw, 4.5rem);
+}
+
+/* The vertical rules that run behind content — the "structure" of the brand */
+@utility ts-rules {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    display: grid;
+    grid-template-columns: repeat(var(--rule-count, 4), minmax(0, 1fr));
+}
+
+/* Paper grain — 3% noise, per the Minimalist Monochrome spec */
+@utility ts-grain-layer {
+    position: fixed;
+    inset: 0;
+    z-index: 60;
+    pointer-events: none;
+    opacity: 0.032;
+    mix-blend-mode: multiply;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* Mask container for clip-path text reveals */
+@utility ts-mask {
+    display: block;
+    overflow: hidden;
+    padding-block: 0.06em;
+    margin-block: -0.06em;
+}
+
+/* ==========================================================================
+   LENIS
+   ========================================================================== */
+html.lenis,
+html.lenis body {
+    height: auto;
+}
+.lenis.lenis-smooth {
+    scroll-behavior: auto !important;
+}
+.lenis.lenis-smooth [data-lenis-prevent] {
+    overscroll-behavior: contain;
+}
+.lenis.lenis-stopped {
+    overflow: hidden;
+}
+
+/* ==========================================================================
+   MOTION PRIMITIVES
+   Elements start hidden ONLY when JS is confirmed live (html.ts-motion),
+   so no-JS and crawler renders keep every word visible.
+   ========================================================================== */
+.ts-motion [data-anim="mask"] .ts-mask > * {
+    display: inline-block;
+    transform: translate3d(0, 108%, 0);
+}
+.ts-motion [data-anim="fade"] {
+    opacity: 0;
+}
+.ts-motion [data-anim="draw"] {
+    transform: scaleX(0);
+    transform-origin: left center;
+}
+.ts-motion [data-anim="draw-y"] {
+    transform: scaleY(0);
+    transform-origin: top center;
+}
+
+/* Marquee (CSS-driven, GPU-friendly) */
+@keyframes ts-marquee {
+    from { transform: translate3d(0, 0, 0); }
+    to   { transform: translate3d(-50%, 0, 0); }
+}
+.ts-marquee-track {
+    display: flex;
+    width: max-content;
+    animation: ts-marquee var(--marquee-duration, 40s) linear infinite;
+    will-change: transform;
+}
+.ts-marquee-track[data-direction="reverse"] {
+    animation-direction: reverse;
+}
+
+/* Mobile menu — the sheet drops from the top edge, the veil dims behind it.
+   Radix drives both off data-state, so the *exit* keyframes are what keep the
+   panel mounted long enough for the close to be seen; drop them and the menu
+   vanishes on the same frame it is dismissed. Transform/opacity only, so the
+   whole full-bleed sheet stays on the compositor. */
+@keyframes ts-menu-sheet-in {
+    from { transform: translate3d(0, -100%, 0); }
+    to   { transform: translate3d(0, 0, 0); }
+}
+@keyframes ts-menu-sheet-out {
+    from { transform: translate3d(0, 0, 0); }
+    to   { transform: translate3d(0, -100%, 0); }
+}
+@keyframes ts-menu-veil-in {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+}
+@keyframes ts-menu-veil-out {
+    from { opacity: 1; }
+    to   { opacity: 0; }
+}
+
+.ts-menu-sheet[data-state="open"] {
+    animation: ts-menu-sheet-in 520ms var(--ease-out-expo) both;
+}
+.ts-menu-sheet[data-state="closed"] {
+    animation: ts-menu-sheet-out 400ms var(--ease-in-out-quint) both;
+}
+.ts-menu-veil[data-state="open"] {
+    animation: ts-menu-veil-in 420ms var(--ease-out-expo) both;
+}
+.ts-menu-veil[data-state="closed"] {
+    animation: ts-menu-veil-out 300ms var(--ease-in-out-quint) both;
+}
+
+/* Interior reveal — the words rise out of their masks as the sheet settles.
+   These delays are deliberately CSS and not a GSAP timeline: a CSS animation
+   starts at the first paint *after* mount, whereas useGSAP runs in the layout
+   effect *before* it, so the cost of that mount (portal, focus trap, scroll
+   lock) is charged against a JS delay but not a CSS one. Measured at 107ms
+   here — enough that the first row spent three-quarters of its rise above the
+   top of the screen, invisible. Same clock for both, and the words stay
+   locked to the sheet. --i is set per row on the link. */
+@keyframes ts-menu-row-in {
+    from { transform: translate3d(0, 112%, 0); }
+    to   { transform: translate3d(0, 0, 0); }
+}
+@keyframes ts-menu-lift-in {
+    from { opacity: 0; transform: translate3d(0, 10px, 0); }
+    to   { opacity: 1; transform: translate3d(0, 0, 0); }
+}
+
+/* Entry only. On close the rules stop matching, the words drop back to their
+   resting position — where they already are — and the sheet carries them up. */
+.ts-menu-sheet[data-state="open"] [data-menu-row] > * {
+    animation: ts-menu-row-in 640ms var(--ease-out-expo) both;
+    animation-delay: calc(165ms + var(--i, 0) * 52ms);
+}
+.ts-menu-sheet[data-state="open"] [data-menu-index] {
+    animation: ts-menu-lift-in 420ms ease-out both;
+    animation-delay: calc(230ms + var(--i, 0) * 52ms);
+}
+.ts-menu-sheet[data-state="open"] [data-menu-cta] {
+    animation: ts-menu-lift-in 460ms ease-out both;
+    animation-delay: 400ms;
+}
+.ts-menu-sheet[data-state="open"] [data-menu-meta] {
+    animation: ts-menu-lift-in 400ms ease-out both;
+    animation-delay: calc(450ms + var(--i, 0) * 35ms);
+}
+
+/* The global reduce block collapses duration but not delay, and `both` fill
+   would hold the backwards state for the whole delay — a visibly empty menu. */
+@media (prefers-reduced-motion: reduce) {
+    .ts-menu-sheet[data-state="open"] [data-menu-row] > *,
+    .ts-menu-sheet[data-state="open"] [data-menu-index],
+    .ts-menu-sheet[data-state="open"] [data-menu-cta],
+    .ts-menu-sheet[data-state="open"] [data-menu-meta] {
+        animation-delay: 0ms !important;
+    }
+}
+
+/* ==========================================================================
+   ACCESSIBILITY — prefers-reduced-motion
+   Everything resolves to its final, readable state. Nothing is left hidden.
+   ========================================================================== */
+@media (prefers-reduced-motion: reduce) {
+    html {
+        scroll-behavior: auto;
+    }
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.001ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.001ms !important;
+    }
+    .ts-marquee-track {
+        animation: none !important;
+        transform: none !important;
+    }
+    .ts-motion [data-anim] {
+        opacity: 1 !important;
+    }
+    .ts-motion [data-anim="mask"] .ts-mask > *,
+    .ts-motion [data-anim="draw"],
+    .ts-motion [data-anim="draw-y"] {
+        transform: none !important;
+    }
+}
+
+.ts-skip-link {
+    position: absolute;
+    left: -9999px;
+    top: 0;
+    z-index: 200;
+}
+.ts-skip-link:focus {
+    left: 1rem;
+    top: 1rem;
+}
+
+/* ==========================================================================
+   PROCESS TIMELINE — markers light up as the red line passes them
+   ========================================================================== */
+.ts-step [data-step-dot] {
+    background: var(--fg);
+    transition: background-color 0.5s var(--ease-out-expo),
+        transform 0.5s var(--ease-out-expo);
+}
+.ts-step [data-step-num],
+.ts-step [data-step-title] {
+    transition: color 0.5s var(--ease-out-expo);
+}
+.ts-step.is-live [data-step-dot] {
+    background: var(--color-signal);
+    transform: scale(1.75);
+}
+.ts-step.is-live [data-step-num] {
+    color: var(--color-signal);
+}
+
+/* ==========================================================================
+   PRINCIPLES MINI-INDEX — the row that owns the viewport goes red
+   ========================================================================== */
+.ts-index-row {
+    transition: color 0.4s var(--ease-out-expo),
+        border-color 0.4s var(--ease-out-expo);
+}
+.ts-index-row.is-live span {
+    color: var(--color-signal-ink);
+}
+.ts-index-row.is-live {
+    border-color: var(--color-signal);
+}
+
+/* ==========================================================================
+   WHY US — THE LEDGER  (components/why-us/Reasons.jsx)
+
+   The eleven reasons are one instrument, not eleven cards.
+
+   SCROLL walks a red reading rule down the stack; the line it lands on OPENS —
+   the Archivo wdth axis widens 70% -> 116%, the type inks from ghost to solid,
+   and its record appears in the right column. That axis is the brand's art
+   direction (index.css loads the wdth build of Archivo for exactly this
+   reason), so the section animates the typeface itself rather than boxes
+   around it.
+
+   POINTER adds a second, independent reading: a red lens painted INSIDE the
+   letterforms only — a radial gradient clipped to the glyphs via
+   background-clip: text. It is localised by construction. Nothing beyond the
+   lens radius is written to, which is both the art direction and the
+   performance budget: only the two or three rows under the pointer are ever
+   touched, and each is one paint on one element.
+
+   Everything that HIDES content lives inside the desktop + no-preference
+   media query, so the reduced-motion and small-screen renders are plain,
+   fully readable ledgers by construction rather than by an override that
+   could be forgotten.
+   ========================================================================== */
+
+/* Registered so they can be TRANSITIONED. To the engine an unregistered custom
+   property is an untyped token list, which swaps instantly; giving these two a
+   syntax makes the ink colour and the width axis interpolable, which is what
+   lets every row state below be a plain CSS transition instead of a per-frame
+   JS tween. --lx / --ly are deliberately left unregistered: they are written
+   from the pointer loop and must land on the same frame, with no easing. */
+@property --ledger-ink {
+    syntax: "<color>";
+    inherits: false;
+    initial-value: rgba(0, 0, 0, 0.72);
+}
+@property --ledger-wdth {
+    syntax: "<percentage>";
+    inherits: false;
+    initial-value: 84%;
+}
+
+.ts-ledger {
+    --lens-r: 96px;
+}
+
+.ts-ledger-title {
+    font-size: clamp(1.55rem, 5.6vw, 2.15rem);
+    font-stretch: var(--ledger-wdth);
+    color: var(--ledger-ink);
+    background-image: radial-gradient(
+        circle var(--lens-r) at var(--lx, -9999px) var(--ly, -9999px),
+        var(--color-signal) 0%,
+        var(--color-signal) 20%,
+        var(--ledger-ink) 80%
+    );
+    transition:
+        --ledger-ink 380ms var(--ease-out-expo),
+        --ledger-wdth 520ms var(--ease-out-expo);
+}
+
+/* The lens only exists where the gradient can be clipped to the glyphs. Where
+   it cannot, the type keeps its plain `color` and simply never lights up —
+   the section still reads, which is the only thing that matters. */
+@supports (background-clip: text) or (-webkit-background-clip: text) {
+    .ts-ledger-title {
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+    }
+}
+
+.ts-ledger-num {
+    color: var(--color-ash-dim);
+    transition: color 380ms var(--ease-out-expo);
+}
+
+/* The ruling under each line. Red draws across it when the row is live. */
+.ts-ledger-tick {
+    transform: scaleX(0);
+    transform-origin: left center;
+    transition: transform 620ms var(--ease-out-expo);
+}
+
+.ts-ledger-row.is-near .ts-ledger-title {
+    --ledger-ink: rgba(0, 0, 0, 0.62);
+    --ledger-wdth: 88%;
+}
+.ts-ledger-row.is-live .ts-ledger-title {
+    --ledger-ink: #000000;
+    --ledger-wdth: 116%;
+}
+.ts-ledger-row.is-live .ts-ledger-num {
+    color: var(--color-signal);
+}
+.ts-ledger-row.is-live .ts-ledger-tick {
+    transform: scaleX(1);
+}
+
+/* Entrance clip. `clip` rather than `hidden` so overflow-clip-margin can let
+   the pointer lean (a few px of translateX) paint past the right edge while
+   the 106% entrance offset is still clipped. Where the margin is unsupported
+   this degrades to a plain clip, which costs at most the last few pixels of
+   the longest title's lean. */
+.ts-ledger-mask {
+    overflow: clip;
+    overflow-clip-margin: 1.25rem;
+}
+.ts-motion .ts-ledger-mask > * {
+    transform: translate3d(0, 106%, 0);
+}
+
+/* The record numeral. Eleven are stacked in one slot and only the live one is
+   shown, so the swap is a plain CSS transition with no text mutation and no
+   timeline to interrupt. */
+.ts-ledger-ghost {
+    opacity: 0;
+    transform: translate3d(0, 10%, 0);
+    transition:
+        opacity 520ms var(--ease-out-expo),
+        transform 640ms var(--ease-out-expo);
+}
+.ts-ledger-ghost.is-live {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+}
+
+/* Parts that only mean anything while the stage is pinned. Hidden everywhere
+   else so they can never strand a half-animated instrument on a layout that
+   never drives it. */
+.ts-ledger-instrument {
+    display: none;
+}
+
+.ts-ledger-body {
+    margin-top: 0.9rem;
+    max-width: 36rem;
+}
+
+/* ── the pinned stage ──────────────────────────────────────────────────── */
+@media (min-width: 1024px) and (prefers-reduced-motion: no-preference) {
+    .ts-ledger {
+        --lens-r: 120px;
+    }
+
+    .ts-ledger-title {
+        --ledger-ink: rgba(0, 0, 0, 0.45);
+        --ledger-wdth: 70%;
+        /* vh in the middle term so eleven rows and their type shrink together
+           on a short laptop instead of the stack outgrowing the viewport */
+        font-size: clamp(1.3rem, 0.9vw + 1.3vh, 2.15rem);
+        /* nowrap is what makes the width axis safe to animate: the line box
+           can never reflow to a second line mid-transition */
+        white-space: nowrap;
+    }
+
+    .ts-ledger-instrument {
+        display: block;
+    }
+
+    /* ── stage layout ───────────────────────────────────────────────
+       This lives here, behind the SAME gate as everything else about the
+       stage, rather than as lg: utilities on the markup. When the two were
+       split, a 1440px reduced-motion render still picked up the lg: classes
+       — eleven flex-1 rows inside a 100svh column — and squeezed a full
+       title AND its paragraph into a 57px box, one overlapping the next.
+       Width and motion have to be asked in one place. */
+    .ts-ledger-section {
+        padding-block: 0;
+    }
+    .ts-ledger-stage {
+        height: 100svh;
+        padding-top: 7.25rem;   /* clears the fixed header */
+        padding-bottom: 4rem;
+    }
+    .ts-ledger-area {
+        flex: 1 1 0%;
+        min-height: 0;
+        margin-top: 0;
+    }
+    .ts-ledger-list {
+        height: 100%;
+        width: 66%;             /* the remaining 34% is the record column */
+    }
+    .ts-ledger-row {
+        display: flex;
+        flex: 1 1 0%;
+        min-height: 0;
+        flex-direction: column;
+        justify-content: center;
+        padding-block: 0;
+    }
+    .ts-ledger-linebox {
+        padding-bottom: 0.7vh;
+    }
+
+    /* The record. One paragraph per row lives inside its own <li> for reading
+       order, but on the stage they all resolve to the same slot in the right
+       column and only the live one is shown. */
+    .ts-ledger-body {
+        position: absolute;
+        top: 52%;
+        right: 0;
+        width: 30%;
+        max-width: 24rem;
+        margin: 0;
+        opacity: 0;
+        transform: translate3d(0, 16px, 0);
+        transition:
+            opacity 420ms var(--ease-out-expo),
+            transform 560ms var(--ease-out-expo);
+    }
+    .ts-ledger-row.is-live .ts-ledger-body {
+        opacity: 1;
+        transform: translate3d(0, 0, 0);
+    }
+}
+
+/* ── compact: the same ledger, read by scrolling ───────────────────────── */
+@media (max-width: 1023.98px) {
+    /* The width axis is pinned below the stage breakpoint. Titles wrap here,
+       and animating wdth on wrapping type re-flows the line count mid-tween —
+       a layout jump, not an animation. Activation is carried by the ink, the
+       red numeral and the scroll-driven lens sweep instead. */
+    .ts-ledger-row.is-near .ts-ledger-title,
+    .ts-ledger-row.is-live .ts-ledger-title {
+        --ledger-wdth: 84%;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .ts-motion .ts-ledger-mask > * {
+        transform: none !important;
+    }
+}
