@@ -8,6 +8,12 @@
 @import "@fontsource-variable/archivo/wdth.css";
 @import "@fontsource-variable/jetbrains-mono/wght.css";
 
+/* The admin dashboard is a separate surface with a different motion budget,
+   so its styles live in their own file rather than in the site design system
+   below. It reads the same tokens — an @import is inlined at build time, so
+   the cascade is identical to having pasted it here. */
+@import "./styles/dashboard.css";
+
 /* ==========================================================================
    TECHNOSPIRIT — DESIGN SYSTEM
    Direction: Swiss Modernism 2.0 x Minimalist Monochrome
@@ -699,5 +705,1204 @@ html.lenis body {
 @media (prefers-reduced-motion: reduce) {
     .ts-motion .ts-ledger-mask > * {
         transform: none !important;
+    }
+}
+
+/* ==========================================================================
+   CONTACT  (pages/Contact.jsx + components/contact/*)
+
+   Two halves that are deliberately not equal in temperature. The LEFT is five
+   words as editorial type with an image plate riding the pointer; the RIGHT is
+   three fields that never move unless the visitor moves them. That contrast is
+   the composition — make both sides expressive and the page has no centre.
+
+   The left side is browsed, not operated. Hover rolls the word up and puts an
+   identical copy in its place, and the reel inside the plate slides to the
+   matching image. Nothing else on the list reacts — the other four words hold
+   their ink — and there is no selected state, so nothing persists once the
+   pointer leaves the type.
+
+   Everything here is a CSS transition keyed off `data-state`. The only
+   JS-driven motion is the plate's position (pointer) and the single entrance
+   timeline — which matches the rest of the codebase: GSAP owns pointer- and
+   scroll-driven motion, CSS owns hover state.
+   ========================================================================== */
+
+/* ── the list ──────────────────────────────────────────────────────────── */
+.ts-intent-list {
+    position: relative;
+    z-index: 1;
+    margin-top: clamp(1.5rem, 2.6vw, 2.5rem);
+    display: flex;
+    flex-direction: column;
+    /* flex-start, not stretch: each row has to shrink to the width of its own
+       word, or the hover target would be the whole column and the empty space
+       to the right of BUILD would light BUILD up. */
+    align-items: flex-start;
+    /* No gap. The air between the words is padding INSIDE each row, so the
+       rows are contiguous and a pointer sliding down the list is never over
+       nothing — which is what lets "off the word" mean "hide the plate"
+       without the plate blinking between every pair. */
+    gap: 0;
+}
+
+.ts-intent-item {
+    max-width: 100%;
+}
+
+.ts-intent-row {
+    display: block;
+    padding-block: clamp(0.45rem, 0.85vw, 0.92rem);
+    /* the words are read, not clicked — no pointer, no link affordance */
+    cursor: default;
+}
+
+.ts-intent-linemask {
+    display: block;
+}
+
+/* Owned by the entrance timeline (yPercent) and nothing else. The roll below
+   is a separate element on purpose: one box carrying both would be GSAP and a
+   CSS transition writing the same transform. */
+.ts-intent-lift {
+    display: block;
+    will-change: transform;
+}
+
+/* The roll. The copy underneath is a real second line of type parked one line
+   box down, so what arrives is the same word at the same weight — not a fade,
+   not a colour change. */
+.ts-intent-roll {
+    position: relative;
+    display: block;
+    transition: transform 520ms var(--ease-out-expo);
+    will-change: transform;
+}
+.ts-intent-item[data-state~="active"] .ts-intent-roll {
+    transform: translate3d(0, -100%, 0);
+}
+
+.ts-intent-word {
+    display: block;
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-stretch: 84%;
+    text-transform: uppercase;
+    letter-spacing: -0.05em;
+    line-height: 0.92;
+    /* nowrap keeps the line box from ever reflowing to a second line mid-roll,
+       which would leave the copy underneath half a word out of register. The
+       clamp is set so the longest row (SOMETHING ELSE) still fits its column. */
+    white-space: nowrap;
+    font-size: clamp(2.15rem, 5.4vw, 5.8rem);
+    color: var(--color-ink);
+}
+
+.ts-intent-ghost {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    width: 100%;
+}
+
+/* ── the plate ─────────────────────────────────────────────────────────── */
+.ts-intent-plate {
+    --plate-w: clamp(210px, 21vw, 320px);
+    position: absolute;
+    top: 0;
+    left: 0;
+    /* above the words, like the reference — the plate is the subject while it
+       is up, and the word it belongs to is still legible to its left */
+    z-index: 2;
+    width: var(--plate-w);
+    aspect-ratio: 4 / 5;
+    /* GSAP translates this box by its own centre, so it is pulled back by half
+       its box here rather than with a percentage transform the tween would
+       have to fight for every frame. */
+    margin-left: calc(var(--plate-w) / -2);
+    margin-top: calc(var(--plate-w) * 1.25 / -2);
+    overflow: hidden;
+    background: var(--color-ink);
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 420ms var(--ease-out-expo);
+    will-change: transform;
+}
+.ts-intent-plate[data-active] {
+    opacity: 1;
+}
+
+/* One cell per image, all mounted, all parked. A swap slides two of them past
+   each other; it is never a crossfade, which between two high-contrast plates
+   goes grey in the middle. The Y is written inline by React — the transition
+   is what makes it a slide. */
+.ts-intent-cell {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    transition: transform 520ms var(--ease-out-expo);
+    will-change: transform;
+}
+.ts-intent-img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/* Below the split there is no pointer to follow, so the plate never renders
+   and can never sit orphaned in the corner of a stacked layout. */
+@media (max-width: 1023.98px) {
+    .ts-intent-plate {
+        display: none;
+    }
+}
+
+/* ── the seam between the halves ───────────────────────────────────────── */
+.ts-contact-seam {
+    display: none;
+}
+@media (min-width: 1024px) {
+    .ts-contact-formcol {
+        padding-left: clamp(1.75rem, 2.6vw, 3.25rem);
+    }
+    .ts-contact-seam {
+        display: block;
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        left: 0;
+        width: 1px;
+        background: var(--color-hair);
+        transform-origin: top center;
+    }
+}
+/* ==========================================================================
+   CONTACT FORM
+
+   Engineered, not decorated. Persistent labels (a label that moves is a label
+   you have to wait for), one message slot per field so validation can never
+   change a field height, and a rule that draws under the input on focus — the
+   same signal move the nav underline and the ActionLink wipe make.
+   ========================================================================== */
+.ts-form-stack {
+    margin-top: clamp(1.75rem, 3vw, 2.5rem);
+    display: flex;
+    flex-direction: column;
+    gap: clamp(1.5rem, 2.6vw, 2.25rem);
+}
+
+.ts-field-label {
+    color: var(--color-ink);
+    transition: color 300ms var(--ease-out-expo);
+}
+.ts-field-msg {
+    color: var(--color-ash-dim);
+    transition: color 300ms var(--ease-out-expo);
+    text-align: right;
+}
+.ts-field-msg-error {
+    color: var(--color-signal-ink);
+}
+
+.ts-field-box {
+    position: relative;
+    margin-top: 0.7rem;
+}
+
+.ts-field-input {
+    display: block;
+    width: 100%;
+    background: transparent;
+    border: 0;
+    padding: 0 0 0.75rem;
+    font-family: var(--font-sans);
+    font-size: 1.0625rem;
+    line-height: 1.5;
+    letter-spacing: -0.011em;
+    color: var(--color-ink);
+    outline-offset: 6px;
+}
+.ts-field-input::placeholder {
+    color: var(--color-ash-dim);
+    transition: color 300ms var(--ease-out-expo);
+}
+.ts-field-input:focus::placeholder {
+    color: var(--color-hair);
+}
+.ts-field-area {
+    resize: none;
+    min-height: 5.25rem;
+    overflow: hidden;
+}
+
+.ts-field-rule {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 1px;
+    background: var(--color-hair);
+    transition: background-color 300ms var(--ease-out-expo);
+}
+.ts-field-rule-live {
+    position: absolute;
+    inset: 0;
+    background: var(--color-ink);
+    transform: scaleX(0);
+    transform-origin: left center;
+    transition: transform 560ms var(--ease-out-expo);
+}
+.ts-field-box:hover .ts-field-rule {
+    background: var(--color-ash-dim);
+}
+.ts-field-box:focus-within .ts-field-rule-live {
+    transform: scaleX(1);
+}
+
+/* Invalid: the rule is red and already drawn, so the field reads as flagged
+   whether or not it currently holds focus. */
+.ts-field[data-invalid] .ts-field-label {
+    color: var(--color-signal-ink);
+}
+.ts-field[data-invalid] .ts-field-rule-live {
+    background: var(--color-signal);
+    transform: scaleX(1);
+}
+
+/* ── CTA ───────────────────────────────────────────────────────────────── */
+.ts-form-foot {
+    margin-top: clamp(2rem, 3.4vw, 2.75rem);
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    align-items: stretch;
+}
+.ts-form-note {
+    color: var(--color-ash-dim);
+}
+
+/* Server-level failure (network down, rate limited, 500) — one red line above
+   the button. Per-field problems are not shown here; those go in the field's
+   own message slot, which is what `.ts-field-msg-error` already owns. */
+.ts-form-error {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.6rem;
+    border-left: 2px solid var(--color-signal);
+    padding: 0.55rem 0 0.55rem 0.75rem;
+    color: var(--color-signal-ink);
+    text-transform: none;
+    letter-spacing: 0.06em;
+    line-height: 1.5;
+}
+
+/* Honeypot. Moved off-screen rather than `display: none`, because a bot that
+   skips undisplayed inputs would skip the trap too. `aria-hidden` on the
+   wrapper plus `tabindex="-1"` on the input keep it away from real visitors. */
+.ts-honeypot {
+    position: absolute;
+    left: -9999px;
+    top: auto;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+}
+
+.ts-cta {
+    position: relative;
+    display: flex;
+    width: 100%;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1.5rem;
+    overflow: hidden;
+    border: 1px solid var(--color-ink);
+    background: var(--color-ink);
+    color: var(--color-paper);
+    padding: 1.15rem 1.75rem;
+    cursor: pointer;
+}
+/* Full width of its column at every size. The list on the left ends on a
+   hairline; this is what gives the right column an equally definite bottom
+   edge instead of a button floating in the last third of it. */
+@media (min-width: 640px) {
+    .ts-cta {
+        padding: 1.35rem 2.25rem;
+    }
+}
+.ts-cta:disabled {
+    cursor: default;
+}
+.ts-cta-fill {
+    position: absolute;
+    inset: 0;
+    background: var(--color-signal);
+    transform: scaleY(0);
+    transform-origin: bottom center;
+    transition: transform 500ms var(--ease-out-expo);
+}
+.ts-cta:hover:not(:disabled) .ts-cta-fill,
+.ts-cta:focus-visible .ts-cta-fill {
+    transform: scaleY(1);
+}
+.ts-cta-label {
+    position: relative;
+    z-index: 1;
+    font-size: 0.7rem;
+}
+.ts-cta-arrow {
+    position: relative;
+    z-index: 1;
+    width: 1rem;
+    height: 1rem;
+    flex: 0 0 auto;
+    transition: transform 500ms var(--ease-out-expo);
+}
+.ts-cta:hover:not(:disabled) .ts-cta-arrow,
+.ts-cta:focus-visible .ts-cta-arrow {
+    transform: translate3d(0.25rem, -0.25rem, 0);
+}
+
+.ts-form-done {
+    /* holds the column open so the split does not collapse on success */
+    min-height: 22rem;
+}
+
+/* ==========================================================================
+   CONTACT — prefers-reduced-motion
+   The reveal still happens; it just stops chasing anything. The plate is
+   placed rather than followed, and every transition that carries distance is
+   already cut to nothing by the global reduce block further up.
+   ========================================================================== */
+@media (prefers-reduced-motion: reduce) {
+    .ts-intent-plate {
+        left: auto;
+        right: 0;
+        top: 50%;
+        margin-left: 0;
+        transform: none !important;
+    }
+}
+
+/* ==========================================================================
+   LAB  (pages/Lab.jsx + components/lab/* + motion/CutoutHeading + FieldLines)
+
+   One piece of footage, scrubbed by scroll, with real HTML typography over it.
+
+   The two structural decisions:
+
+   1. THE PIN IS `position: sticky`, not ScrollTrigger. The section is simply
+      tall (100svh + --lab-travel) and the stage sticks inside it. No pin
+      spacer to re-measure, nothing to strand on resize or on a route return,
+      and identical behaviour on touch. ScrollTrigger only reports progress.
+
+   2. THE TYPE IS ALWAYS PAPER-WHITE, never flipped per beat. The footage runs
+      from a white gallery to a black machine and back again, so any single
+      ink colour would fail somewhere in the middle. Instead the stage is
+      letterboxed with hard black rails top and bottom — the same film-strip
+      device as the horizontal act on Home, and the same favour to the fixed
+      nav, which gets one consistent black ground for the whole sequence —
+      and a scrim grades the left edge where the statements sit. One rule, no
+      fragile per-frame colour decisions.
+   ========================================================================== */
+
+.ts-lab-section {
+    --lab-travel: 420svh;
+    /* The top rail is deep enough to hold the fixed header (89px at rest, 68
+       condensed) AND the sequence readout under it. It is not decoration: the
+       header is transparent and hit-tests the ground behind it, so this is
+       what gives it one consistent black zone for the whole sequence, and it
+       letterboxes the picture to roughly 2:1 at the same time. */
+    --lab-rail-top: 8rem;
+    --lab-rail-foot: 4.25rem;
+    position: relative;
+    height: calc(100svh + var(--lab-travel));
+    background: var(--color-ink);
+}
+
+.ts-lab-pin {
+    position: sticky;
+    top: 0;
+    height: 100svh;
+    overflow: hidden;
+    background: var(--color-ink);
+}
+
+/* Owned by ScrollyVideo: it appends the <video>, swaps in a <canvas> once the
+   frames are decoded, and empties this node on destroy(). */
+.ts-lab-picture {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+}
+
+.ts-lab-poster {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    /* Under the picture, so the first painted frame simply covers it rather
+       than needing to be timed against a fade. */
+    z-index: 0;
+    transition: opacity 420ms var(--ease-out-expo);
+}
+.ts-lab-poster[data-cleared] {
+    opacity: 0;
+}
+
+.ts-lab-overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    /* The stage is a picture, not a control surface. Only the discipline rows
+       opt back in. */
+    pointer-events: none;
+}
+
+/* The letterbox. */
+.ts-lab-overlay::before,
+.ts-lab-overlay::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    background: var(--color-ink);
+    z-index: 1;
+}
+.ts-lab-overlay::before {
+    top: 0;
+    height: var(--lab-rail-top);
+}
+.ts-lab-overlay::after {
+    bottom: 0;
+    height: var(--lab-rail-foot);
+}
+
+.ts-lab-scrim {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    background: linear-gradient(
+        90deg,
+        rgba(0, 0, 0, 0.9) 0%,
+        rgba(0, 0, 0, 0.74) 22%,
+        rgba(0, 0, 0, 0.36) 42%,
+        rgba(0, 0, 0, 0) 62%
+    );
+}
+/* The hard stop that keeps the scrim reading as a plate edge rather than as a
+   soft vignette. It only draws where there is white behind it, which is the
+   point. */
+.ts-lab-scrim::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 62%;
+    width: 1px;
+    background: rgba(255, 255, 255, 0.1);
+}
+
+/* ── the prepare gate ──────────────────────────────────────────────────
+   The source clip carries two keyframes in ten seconds, so a scrub position
+   cannot be reached by seeking without decoding most of a GOP to get there.
+   The frames are decoded up front instead, and the page is held still until
+   they exist — because a half-prepared scrub is worse than a short wait, and
+   the first scroll has to be as good as the hundredth.
+
+   It sits over the poster, not over a blank stage, so what is on screen for
+   that moment is still the film's first frame. */
+.ts-lab-prep {
+    position: absolute;
+    inset: 0;
+    z-index: 6;
+    display: grid;
+    place-items: end start;
+    padding: 0 clamp(1.25rem, 4vw, 4.5rem) calc(var(--lab-rail-foot) + clamp(1.5rem, 3.5vw, 3rem));
+    background: rgba(0, 0, 0, 0.35);
+    transition:
+        opacity 460ms var(--ease-out-expo),
+        visibility 0s linear 460ms;
+}
+/* The statements and the four systems live in the same bottom-left corner the
+   prepare line does, and CSS cannot select backwards to a later sibling — so
+   the pin carries the flag and the overlay steps aside while the gate is up.
+   The rails stay: they are the frame, not content. */
+.ts-lab-pin[data-prep] .ts-lab-beats,
+.ts-lab-pin[data-prep] .ts-read,
+.ts-lab-pin[data-prep] .ts-lab-hud-foot .ts-lab-hint {
+    opacity: 0;
+}
+.ts-lab-beats,
+.ts-read {
+    transition: opacity 320ms var(--ease-out-expo);
+}
+
+.ts-lab-prep[data-done] {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+}
+
+.ts-lab-prep-inner {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.85rem;
+    width: min(30rem, 70vw);
+}
+.ts-lab-prep-line {
+    color: var(--color-paper);
+    font-size: clamp(0.75rem, 0.9vw, 0.85rem);
+}
+.ts-lab-prep-rail {
+    position: relative;
+    display: block;
+    width: 100%;
+    height: 2px;
+    background: rgba(255, 255, 255, 0.18);
+}
+.ts-lab-prep-fill {
+    position: absolute;
+    inset: 0;
+    background: var(--color-signal);
+    transform-origin: left center;
+    transition: transform 220ms linear;
+    will-change: transform;
+}
+
+/* While the gate is up the document must not move. Lenis is stopped too — this
+   is the belt to that braces, for the wheel/keyboard paths Lenis is not
+   currently driving (reduced motion, or before it has initialised). */
+html.ts-lab-locked,
+html.ts-lab-locked body {
+    overflow: hidden;
+    overscroll-behavior: none;
+}
+
+/* ── the instrument rail ───────────────────────────────────────────────── */
+.ts-lab-hud {
+    position: absolute;
+    inset: 0;
+    z-index: 3;
+}
+.ts-lab-hud-top {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: var(--lab-rail-top);
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0 clamp(1.25rem, 4vw, 4.5rem) 0.85rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.14);
+}
+.ts-lab-hud-foot {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: var(--lab-rail-foot);
+    display: flex;
+    align-items: center;
+    padding: 0 clamp(1.25rem, 4vw, 4.5rem);
+    border-top: 1px solid rgba(255, 255, 255, 0.14);
+}
+.ts-lab-hint {
+    flex: 0 0 auto;
+    transition: opacity 500ms var(--ease-out-expo);
+}
+/* Takes the hint's place rather than leaving the rail empty: the hint is only
+   true before anyone has scrolled, but the rail is on screen the whole way. */
+.ts-lab-chapter {
+    position: absolute;
+    left: clamp(1.25rem, 4vw, 4.5rem);
+    opacity: 0;
+    transition: opacity 500ms var(--ease-out-expo);
+}
+.ts-lab-foot-right {
+    margin-left: auto;
+    color: rgba(255, 255, 255, 0.3);
+}
+/* Full-bleed and hard against the bottom edge, like a film scrub. In flow
+   next to the hint it started a third of the way across and looked like a
+   bar that had failed to fill rather than one that had not run yet. */
+.ts-lab-rail {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 2px;
+    background: rgba(255, 255, 255, 0.16);
+}
+.ts-lab-rail-fill {
+    position: absolute;
+    inset: 0;
+    background: var(--color-signal);
+    transform-origin: left center;
+    will-change: transform;
+}
+
+/* ── the statements ────────────────────────────────────────────────────── */
+.ts-lab-beats {
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+}
+
+/* Absolutely positioned so the tracking tween on the giant lines re-lays-out
+   nothing but itself. Every beat shares this box; only one is ever on. */
+.ts-lab-beat {
+    position: absolute;
+    left: clamp(1.25rem, 4vw, 4.5rem);
+    bottom: calc(var(--lab-rail-foot) + clamp(1.5rem, 3.5vw, 3rem));
+    width: min(46rem, 62vw);
+    visibility: hidden;
+}
+.ts-lab-beat[data-state="on"] {
+    visibility: visible;
+}
+
+.ts-lab-beat-head {
+    display: flex;
+    align-items: baseline;
+    gap: 1rem;
+}
+.ts-lab-beat-rule {
+    display: block;
+    height: 1px;
+    width: min(22rem, 42vw);
+    margin-top: 0.85rem;
+    background: rgba(255, 255, 255, 0.28);
+    transform-origin: left center;
+}
+
+.ts-lab-beat-lines {
+    margin-top: clamp(0.85rem, 1.6vw, 1.4rem);
+}
+.ts-lab-beat-line {
+    display: block;
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-stretch: 78%;
+    text-transform: uppercase;
+    line-height: 0.86;
+    letter-spacing: -0.05em;
+    /* Bought back at the word boundary. The display cut's negative tracking
+       is subtracted from the word space as well as from the letter space, and
+       at this size that closes it completely — ONE LINE set as ONELINE. */
+    word-spacing: 0.14em;
+    white-space: nowrap;
+    font-size: clamp(2.5rem, 7.4vw, 6.5rem);
+    color: var(--color-paper);
+    will-change: transform, clip-path;
+}
+.ts-lab-beat-note {
+    display: block;
+    margin-top: clamp(0.9rem, 1.8vw, 1.5rem);
+    max-width: 34rem;
+    font-size: clamp(0.9rem, 1.05vw, 1.0625rem);
+    color: rgba(255, 255, 255, 0.62);
+}
+
+/* ── INSIDE, during the orbit ──────────────────────────────────────────
+   Type only. This replaces a pointer-tracked image plate, which is already
+   the entire left half of /contact — running it twice would have made the two
+   pages read as one template — and which was hover-first, so on a phone it
+   degraded to watching four pictures go past.
+
+   The mechanic is the brand's own instead: Archivo's WIDTH AXIS. Nothing on
+   this site is set at a default width (ts-display-tight is 78%, ts-display-wide
+   is 118%), so focus is expressed as width. The live row opens to 116% and full
+   paper; the other three compress to 68% and step back. One property, four
+   elements, and the list physically makes room for whichever part of the
+   machine the camera is inside.
+
+   font-stretch is a layout property, but the whole block is absolutely
+   positioned inside the pinned stage, so a width change re-lays-out four
+   rows and nothing else on the page. */
+.ts-read {
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    visibility: hidden;
+}
+.ts-read[data-state="on"],
+.ts-read[data-state="static"] {
+    visibility: visible;
+}
+
+.ts-read-head {
+    position: absolute;
+    left: clamp(1.25rem, 4vw, 4.5rem);
+    top: calc(var(--lab-rail-top) + clamp(1.25rem, 3vw, 2.5rem));
+    display: flex;
+    align-items: baseline;
+    gap: 1rem;
+}
+
+.ts-read-body {
+    position: absolute;
+    left: clamp(1.25rem, 4vw, 4.5rem);
+    right: clamp(1.25rem, 4vw, 4.5rem);
+    bottom: calc(var(--lab-rail-foot) + clamp(1.5rem, 3.5vw, 3rem));
+    display: grid;
+    grid-template-columns: 1px minmax(0, 1fr);
+    column-gap: clamp(1rem, 2vw, 1.75rem);
+    align-items: end;
+}
+
+/* The index: a red mark travelling a hairline. Same device as the sequence
+   rail in the foot, so the page has one idea of what "position" looks like. */
+.ts-read-rail {
+    position: relative;
+    align-self: stretch;
+    background: rgba(255, 255, 255, 0.2);
+}
+.ts-read-mark {
+    position: absolute;
+    left: -1px;
+    top: 0;
+    width: 3px;
+    height: 25%;
+    background: var(--color-signal);
+    transition: transform 620ms var(--ease-out-expo);
+    will-change: transform;
+}
+
+.ts-read-list {
+    grid-column: 2;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    /* No gap — the air is padding inside each row, so a pointer travelling
+       down the list is never over nothing between two words. */
+    gap: 0;
+    pointer-events: auto;
+}
+
+.ts-read-row {
+    display: flex;
+    align-items: baseline;
+    gap: clamp(0.75rem, 1.6vw, 1.5rem);
+    padding-block: clamp(0.2rem, 0.5vw, 0.45rem);
+    cursor: default;
+}
+
+.ts-read-word {
+    display: block;
+    font-family: var(--font-display);
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: -0.04em;
+    word-spacing: 0.14em;
+    line-height: 1;
+    white-space: nowrap;
+    font-size: clamp(1.5rem, 3.6vw, 3.3rem);
+    /* The two things that move. Width is the focus; colour only confirms it. */
+    font-stretch: 68%;
+    color: rgba(255, 255, 255, 0.32);
+    transition:
+        font-stretch 620ms var(--ease-out-expo),
+        color 420ms var(--ease-out-expo);
+}
+.ts-read-row[data-state="active"] .ts-read-word {
+    font-stretch: 116%;
+    color: var(--color-paper);
+}
+
+.ts-read-meta {
+    flex: 0 0 auto;
+    color: var(--color-signal);
+    opacity: 0;
+    transform: translate3d(-0.5rem, 0, 0);
+    transition:
+        opacity 380ms var(--ease-out-expo),
+        transform 380ms var(--ease-out-expo);
+}
+.ts-read-row[data-state="active"] .ts-read-meta {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+}
+
+/* One line, under the list, resolving in place as the index moves. Height is
+   reserved so the list never shifts when the text changes length. */
+.ts-read-note {
+    grid-column: 2;
+    margin-top: clamp(0.9rem, 1.8vw, 1.5rem);
+    min-height: 1.2em;
+    color: rgba(255, 255, 255, 0.62);
+    letter-spacing: 0.12em;
+}
+
+@media (max-width: 1023.98px) {
+    .ts-read-word {
+        font-size: clamp(1.3rem, 6vw, 2.3rem);
+    }
+    .ts-read-row {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.15rem;
+    }
+    /* At this width a row set at 116% no longer fits the column, and the
+       nowrap would push it off the edge. The focus range narrows rather than
+       the mechanic being dropped. */
+    .ts-read-word {
+        font-stretch: 74%;
+    }
+    .ts-read-row[data-state="active"] .ts-read-word {
+        font-stretch: 100%;
+    }
+}
+
+
+/* ── the core mark, carried out of the sequence ────────────────────────── */
+.ts-lab-core-mark {
+    display: block;
+    width: 10px;
+    height: 10px;
+    background: var(--color-signal);
+}
+
+.ts-lab-cut {
+    font-size: clamp(2.4rem, 10.5vw, 9rem);
+}
+
+/* ==========================================================================
+   CUTOUT HEADING  (motion/CutoutHeading.jsx — ported from React Bits)
+   The words are a window onto a picture, not a fill.
+   ========================================================================== */
+.ts-cutout {
+    position: relative;
+    display: block;
+    margin: 0;
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-stretch: 78%;
+    letter-spacing: -0.05em;
+    /* Safe to set here: each word is positioned into the clip path from its
+       own offsetLeft, so the mask picks the new spacing up for free. */
+    word-spacing: 0.14em;
+    line-height: 0.86;
+    text-transform: uppercase;
+}
+
+/* The real text: transparent, but present, in reading order, and the thing
+   the clip path is measured from — so the two can never drift apart. */
+.ts-cutout-measure {
+    display: block;
+    color: transparent;
+}
+.ts-cutout-word {
+    display: inline-block;
+    white-space: pre;
+}
+/* Zero-size inline-block: its bottom edge sits on the text baseline, so its
+   offsetTop is the baseline the SVG <text> needs for its `y`. */
+.ts-cutout-base {
+    display: inline-block;
+    width: 0;
+    height: 0;
+}
+
+.ts-cutout-defs {
+    position: absolute;
+    width: 0;
+    height: 0;
+    overflow: hidden;
+}
+.ts-cutout-reveal,
+.ts-cutout-clip {
+    position: absolute;
+    inset: 0;
+    display: block;
+    pointer-events: none;
+}
+/* The media inside is scaled up so the parallax has somewhere to travel, and
+   clip-path is a paint-time operation — it does not clip SCROLLABLE overflow.
+   Without this the scaled picture pushed the document 119px wide at 1440. */
+.ts-cutout-reveal {
+    overflow: hidden;
+}
+.ts-cutout-media {
+    position: absolute;
+    inset: 0;
+    display: block;
+    will-change: transform;
+}
+.ts-cutout-src {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    user-select: none;
+    -webkit-user-drag: none;
+}
+
+/* ==========================================================================
+   FIELD LINES  (motion/FieldLines.jsx — ported from React Bits)
+
+   NOTE THE PREFIX. These were `.ts-field*` until it turned out the contact
+   form has owned `.ts-field` since it was built, and a bare `.ts-field
+   { display: grid; grid-template-columns: repeat(13, 1fr) }` re-laid every
+   field on /contact into thirteen columns. Global class names are exactly the
+   thing every React Bits port here had to have taken off it; this one was
+   introduced rather than inherited.
+   ========================================================================== */
+.ts-linefield {
+    display: grid;
+    grid-template-columns: repeat(var(--linefield-cols, 13), 1fr);
+    grid-template-rows: repeat(var(--linefield-rows, 7), 1fr);
+    place-items: center;
+}
+.ts-linefield-cell {
+    display: grid;
+    place-items: center;
+    width: 100%;
+    height: 100%;
+}
+.ts-linefield-line {
+    display: block;
+    /* Longer and 2px, not 1px. At a hairline over a full-bleed black section
+       the field was technically present and visually absent — you could not
+       tell it was tracking you, which is the only reason it is there. */
+    width: clamp(26px, 3vw, 46px);
+    height: 2px;
+    transform-origin: center;
+    background: rgba(255, 255, 255, 0.5);
+    will-change: transform;
+}
+.ts-linefield-line[data-hot] {
+    background: var(--color-signal);
+    box-shadow: 0 0 6px rgba(255, 45, 22, 0.55);
+}
+
+/* ==========================================================================
+   THE SEAM  (components/lab/LabSeam.jsx)
+   The monolith's gesture at page scale: two paper faces part from the centre
+   and the machine is behind them.
+   ========================================================================== */
+/* Tall, so the stage inside can stick. NOTE: no `overflow` here — an
+   overflow other than visible on an ancestor turns that ancestor into the
+   sticky element's scrollport, and since this section does not scroll, the
+   stage would silently stop sticking. The clipping belongs on the stage. */
+.ts-seam {
+    position: relative;
+    height: 175svh;
+}
+.ts-seam-stage {
+    position: sticky;
+    top: 0;
+    height: 100svh;
+    overflow: hidden;
+}
+/* z-index 0 is load-bearing, not tidying. Without it this box makes no
+   stacking context of its own, so the `z-10` on the content inside it is
+   compared against .ts-seam-doors (z-index 5) directly — and 10 beats 5, so
+   the headline painted straight over the shut white faces instead of behind
+   them. Nothing looked wrong until the doors were half open. */
+.ts-seam-machine {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+}
+/* The field is the machine surface and shows from the first millimetre of the
+   opening; the type waits until the faces are properly apart. */
+.ts-seam-machine .ts-shell {
+    opacity: clamp(0, calc((var(--open) - 0.42) * 3.2), 1);
+    transform: translate3d(0, calc((1 - var(--open)) * 26px), 0);
+}
+.ts-seam-head {
+    font-size: clamp(2.4rem, 8vw, 6.5rem);
+    word-spacing: 0.14em;
+}
+
+@media (max-width: 767.98px) {
+    .ts-seam {
+        height: 165svh;
+    }
+}
+.ts-seam-field {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    /* Was 0.55, which multiplied against the line colour and left the field
+       barely there. The lines carry their own alpha now; the container should
+       not be taking another bite out of it. */
+    opacity: 1;
+    pointer-events: none;
+}
+
+.ts-seam-doors {
+    position: absolute;
+    inset: 0;
+    z-index: 5;
+    pointer-events: none;
+}
+/* Hit-testable on purpose. The fixed header decides its own light/dark
+   state by reading what is actually painted under it (elementsFromPoint at
+   x = 50%, y = 28), and it skips anything with pointer-events: none — so
+   while these faces are shut the header would have read the section's ink
+   zone and gone white-on-black over solid white paper. Declaring the zone
+   here fixes it, and it un-fixes itself for free: clip-path clips hit-testing
+   too, so as the faces part they stop being found and the ink zone behind
+   takes over exactly when it becomes true. */
+.ts-seam-door {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    pointer-events: auto;
+    background: var(--color-paper);
+    color: var(--color-ink);
+}
+/* Both halves carry the same full-bleed line at the same place, so what parts
+   is one continuous word being cut down the middle. */
+.ts-seam-door[data-side="l"] {
+    clip-path: inset(0 calc(50% + var(--open) * 50%) 0 0);
+}
+.ts-seam-door[data-side="r"] {
+    clip-path: inset(0 0 0 calc(50% + var(--open) * 50%));
+}
+.ts-seam-face {
+    display: block;
+    width: 100%;
+    padding-inline: clamp(1.25rem, 4vw, 4.5rem);
+    text-align: center;
+}
+.ts-seam-word {
+    display: block;
+    /* Gone by the time the faces are a third apart: the word belongs to the
+       shut face, and holding it any longer runs it straight through the
+       headline behind. The white faces carry the rest of the parting. */
+    opacity: clamp(0, calc(1 - var(--open) * 3), 1);
+    font-size: clamp(2.2rem, 10vw, 9rem);
+    word-spacing: 0.14em;
+    white-space: nowrap;
+}
+
+/* The two inner edges, travelling out with the doors. */
+.ts-seam-edge {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: var(--color-signal);
+    opacity: calc(1 - var(--open));
+}
+.ts-seam-edge[data-edge="l"] {
+    left: calc(50% - var(--open) * 50%);
+    transform: translateX(-100%);
+}
+.ts-seam-edge[data-edge="r"] {
+    left: calc(50% + var(--open) * 50%);
+}
+
+/* ==========================================================================
+   LAB — prefers-reduced-motion
+
+   No decode, no seek, no pin. The section becomes an ordinary page: the
+   poster frame as a still, then every statement in reading order, then the
+   four disciplines as a plain list. Nothing that was on the page is lost —
+   it stops being revealed and is simply there.
+   ========================================================================== */
+@media (prefers-reduced-motion: reduce) {
+    .ts-lab-section {
+        height: auto;
+    }
+    .ts-lab-pin {
+        position: static;
+        height: auto;
+        overflow: visible;
+    }
+    .ts-lab-picture {
+        display: none;
+    }
+    .ts-lab-poster {
+        position: relative;
+        inset: auto;
+        height: auto;
+        aspect-ratio: 16 / 9;
+        opacity: 1 !important;
+    }
+    .ts-lab-overlay {
+        position: static;
+        padding: clamp(2.5rem, 6vw, 4.5rem) clamp(1.25rem, 4vw, 4.5rem);
+    }
+    .ts-lab-overlay::before,
+    .ts-lab-overlay::after,
+    .ts-lab-scrim,
+    .ts-lab-hud,
+    .ts-lab-prep {
+        display: none;
+    }
+    .ts-lab-beats,
+    .ts-read {
+        position: static;
+        display: flex;
+        flex-direction: column;
+        gap: clamp(2rem, 5vw, 3.5rem);
+        visibility: visible;
+    }
+    .ts-lab-beat {
+        position: static;
+        width: auto;
+        visibility: visible;
+    }
+    .ts-lab-beat-line {
+        clip-path: none !important;
+        transform: none !important;
+        white-space: normal;
+        font-size: clamp(2rem, 6vw, 3.5rem);
+    }
+    .ts-lab-beat-note {
+        display: block;
+    }
+    .ts-read-head,
+    .ts-read-body {
+        position: static;
+    }
+    .ts-read-body {
+        margin-top: 1.5rem;
+    }
+    /* Every row reads at full strength: there is no live row when there is no
+       sequence running, so dimming three of them would be hiding content. */
+    .ts-read-word {
+        font-stretch: 100% !important;
+        color: var(--color-paper);
+    }
+    .ts-read-meta {
+        opacity: 1;
+        transform: none;
+    }
+    .ts-read-rail {
+        display: none;
+    }
+    .ts-read-body {
+        grid-template-columns: minmax(0, 1fr);
+    }
+    .ts-read-list,
+    .ts-read-note {
+        grid-column: 1;
+    }
+    .ts-seam {
+        height: auto;
+    }
+    .ts-seam-stage {
+        position: static;
+        height: auto;
+        overflow: visible;
+    }
+    .ts-seam-machine {
+        position: relative;
+        inset: auto;
+        padding-block: clamp(3.5rem, 8vw, 7rem);
+    }
+    .ts-seam-doors {
+        display: none;
     }
 }

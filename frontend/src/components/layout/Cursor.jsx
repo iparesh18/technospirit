@@ -6,6 +6,10 @@ const LABELS = {
   start: "START",
   explore: "EXPLORE",
   drag: "DRAG",
+  // Added for /lab. The sequence is scrubbed rather than clicked, so the
+  // follower has to say what the gesture is — there is no other affordance
+  // on a full-bleed picture.
+  scroll: "SCROLL",
 };
 
 /**
@@ -33,8 +37,16 @@ const CAPSULES = {
 const BOX_W = 340;
 const BOX_H = 96;
 
-/** Square window sizes for the three pre-existing states. */
-const DISC = { idle: 30, interactive: 58, labelled: 96 };
+/**
+ * Square window sizes.
+ *
+ * `mute` is the contact page's state: where something else on the page is
+ * already attached to the pointer — the intent plate — the follower shrinks to
+ * a registration mark instead of expanding into a labelled disc over it. It is
+ * the same follower doing something quieter, not a second cursor system, and
+ * it is the reason the plate can be centred on the pointer at all.
+ */
+const DISC = { idle: 30, interactive: 58, labelled: 96, mute: 16 };
 
 const CAP_H = 54;
 const CAP_PAD = 26; // per side, around the measured copy
@@ -298,6 +310,20 @@ export default function Cursor() {
         state = next;
         setLabel(null);
         toCapsule(key, swapping);
+        return;
+      }
+
+      /**
+       * Tested before the label and interactive cases, and deliberately so:
+       * the intent rows are <label>s wrapping real radios, so without this
+       * they would arm the 58px interactive square and park it in the middle
+       * of the plate that is already following the pointer.
+       */
+      if (el?.closest("[data-cursor-mute]")) {
+        if (state === "mute") return;
+        state = "mute";
+        setLabel(null);
+        toDisc(DISC.mute, false);
         return;
       }
 

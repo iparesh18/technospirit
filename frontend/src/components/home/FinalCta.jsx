@@ -68,7 +68,7 @@ export default function FinalCta() {
 
           <Magnet padding={110} strength={3.4} className="self-start">
           <Link
-            to="/services"
+            to="/contact"
             data-cursor="start"
             className="group/final flex items-center gap-8 self-start border-2 border-black bg-black px-8 py-6 text-white transition-colors duration-500 hover:bg-transparent hover:text-black sm:px-12 sm:py-8"
           >

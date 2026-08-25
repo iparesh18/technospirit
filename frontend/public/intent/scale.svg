@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 1000" width="800" height="1000" role="img" aria-label="Growth structure — a system expanding outward from a single origin in measured steps.">
+  <defs>
+    <filter id="g" x="0" y="0" width="100%" height="100%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="3" stitchTiles="stitch"/>
+    </filter>
+    <pattern id="mesh" width="40" height="40" patternUnits="userSpaceOnUse">
+      <path d="M40 0V40M0 40H40" fill="none" stroke="#fff" stroke-opacity=".055" stroke-width="1"/>
+    </pattern>
+  </defs>
+
+  <rect width="800" height="1000" fill="#000"/>
+  <rect width="800" height="1000" fill="url(#mesh)"/>
+
+  <!-- expansion rings from the origin at bottom-left -->
+  <g fill="none" stroke="#fff">
+    <rect x="90" y="820" width="90" height="90" stroke-opacity=".82"/>
+    <rect x="90" y="720" width="190" height="190" stroke-opacity=".6"/>
+    <rect x="90" y="600" width="310" height="310" stroke-opacity=".44"/>
+    <rect x="90" y="460" width="450" height="450" stroke-opacity=".32"/>
+    <rect x="90" y="300" width="610" height="610" stroke-opacity=".22"/>
+    <rect x="90" y="130" width="620" height="780" stroke-opacity=".13"/>
+  </g>
+
+  <!-- origin -->
+  <rect x="90" y="820" width="90" height="90" fill="#ff2d16"/>
+
+  <!-- the diagonal the system grows along -->
+  <path d="M90 910L710 290" fill="none" stroke="#ff2d16" stroke-width="2"/>
+  <path d="M640 290h70v70" fill="none" stroke="#ff2d16" stroke-width="2"/>
+
+  <!-- step columns, each taller than the last -->
+  <g fill="#fff" fill-opacity=".2">
+    <rect x="250" y="806" width="42" height="104"/>
+    <rect x="316" y="762" width="42" height="148"/>
+    <rect x="382" y="700" width="42" height="210"/>
+    <rect x="448" y="620" width="42" height="290"/>
+    <rect x="514" y="520" width="42" height="390"/>
+  </g>
+  <rect x="580" y="390" width="42" height="520" fill="#ff2d16" fill-opacity=".9"/>
+
+  <!-- capacity scale, right edge -->
+  <g stroke="#fff" stroke-opacity=".34">
+    <path d="M742 190h28M742 310h28M742 430h28M742 550h28M742 670h28M742 790h28M742 910h28"/>
+  </g>
+  <path d="M742 190V910" fill="none" stroke="#fff" stroke-opacity=".2"/>
+
+  <!-- load reading -->
+  <g fill="#fff" fill-opacity=".28">
+    <rect x="90" y="120" width="150" height="8"/>
+    <rect x="90" y="146" width="98" height="8"/>
+  </g>
+
+  <rect width="800" height="1000" filter="url(#g)" opacity=".13" style="mix-blend-mode:screen"/>
+</svg>

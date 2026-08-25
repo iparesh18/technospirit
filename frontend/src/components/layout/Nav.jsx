@@ -11,6 +11,7 @@ export const NAV_ITEMS = [
   { index: "02", label: "About", to: "/about" },
   { index: "03", label: "Services", to: "/services" },
   { index: "04", label: "Why Us", to: "/why-us" },
+  { index: "05", label: "Contact", to: "/contact" },
 ];
 
 /* -------------------------------------------------------------------------- */
@@ -135,7 +136,7 @@ function MobileMenu({ open, onOpenChange }) {
             ))}
 
             <Link
-              to="/services"
+              to="/contact"
               onClick={() => onOpenChange(false)}
               data-menu-cta
               className="flex items-center justify-between border-b border-white/16 bg-signal px-5 py-6 text-white"
@@ -310,7 +311,7 @@ export default function Nav() {
 
           <div className="flex items-center gap-4">
             <Link
-              to="/services"
+              to="/contact"
               data-cursor="start"
               className="group/start relative hidden overflow-hidden border border-current px-5 py-3 md:block"
             >

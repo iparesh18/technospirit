@@ -7,13 +7,14 @@
 
 ## Current Phase
 
-**PHASE 1 — Frontend only.** Backend is a scaffold and must stay empty.
+**PHASE 2 — Backend is live.** (Phase 1, frontend-only, is complete.)
 
-Do NOT start in Phase 1: backend logic, MongoDB, auth, admin dashboard,
-contact API, payments, CMS, deployment.
+Shipped in Phase 2 so far: the contact API, the Inquiry model, Nodemailer with
+both transactional emails, JWT/cookie admin auth, and the admin dashboard.
+See **PHASE 2 — CONTACT + DASHBOARD** near the bottom of this file.
 
-Status: **~85% complete.** All pages and sections are built and the production
-build passes. Remaining work is visual review + polish (see SESSION CHECKPOINT).
+Still NOT started: payments, CMS, deployment, the four future dashboard
+modules (AI Conversations, Leads, Analytics, Settings).
 
 ---
 
@@ -41,7 +42,20 @@ Root has exactly two app folders: `frontend/` and `backend/`.
 preset, no longer imported. Safe to uninstall.
 
 ### backend/
-No dependencies installed. `package.json` exists with stub scripts only.
+| Package | Purpose |
+|---|---|
+| `express` 5 | HTTP + routing |
+| `mongoose` 9 | MongoDB ODM |
+| `nodemailer` 9 | Gmail SMTP |
+| `bcryptjs` 3 | password hashing (cost 12) |
+| `jsonwebtoken` 9 | session token |
+| `cookie-parser` | reads the HttpOnly auth cookie |
+| `cors`, `helmet` | origin allowlist, security headers |
+| `express-rate-limit` 8 | login / contact / admin-API limits |
+| `express-validator` 7 | server-side request validation |
+| `dotenv` | `.env` loading |
+
+ESM throughout (`"type": "module"`).
 
 ---
 
@@ -138,11 +152,32 @@ technospirit/
 │       │   ├── home/        # 10 section components
 │       │   ├── about/       # Disciplines, MissionVision, Principles
 │       │   ├── services/    # ServiceGroup
-│       │   └── why-us/      # Reasons, NoList
-│       └── pages/           # Home, About, Services, WhyUs, NotFound
-└── backend/                 # SCAFFOLD ONLY — all subfolders empty
-    ├── config/ controllers/ middleware/ models/ routes/ services/ utils/
-    ├── app.js  server.js  package.json  .env.example  README.md
+│       │   ├── why-us/      # Reasons, NoList
+│       │   ├── contact/     # ContactForm, FormField, ContactCTA,
+│       │   │                #   HoverImageReveal
+│       │   ├── lab/         # the cinematic sequence
+│       │   └── dashboard/   # DashboardLayout, ProtectedRoute,
+│       │                    #   InquiryDetail, StatusPill
+│       ├── context/         # authContext.js (+ useAuth), AuthProvider.jsx
+│       ├── styles/
+│       │   └── dashboard.css  # admin surface — @imported by index.css
+│       ├── lib/
+│       │   ├── api.js       # THE only place that talks to the API
+│       │   └── formatDate.js
+│       └── pages/
+│           ├── Home, About, Services, WhyUs, Contact, Lab, NotFound
+│           └── dashboard/   # Login, Overview, Inquiries
+└── backend/                 # IMPLEMENTED — see backend/README.md
+    ├── config/      env.js (validated at boot), db.js
+    ├── controllers/ contact, auth, adminInquiry
+    ├── middleware/  requireAuth, rateLimiters, validate, errorHandler
+    ├── models/      Inquiry.js, Admin.js
+    ├── routes/      contact, auth, admin, index
+    ├── services/    mailer.js, emailTemplates.js
+    ├── utils/       AppError, sanitize, token, bootstrapAdmin, seedDev
+    ├── app.js  server.js  package.json
+    ├── .env.example   .env (gitignored, never committed)
+    └── README.md
 ```
 
 **Content lives inside its component** — there is no `data/` folder and none
@@ -158,7 +193,22 @@ should be created (explicit user instruction).
 | `/about` | `About.jsx` | opener + Disciplines + MissionVision + Principles |
 | `/services` | `Services.jsx` | opener + marquee + 3 × ServiceGroup |
 | `/why-us` | `WhyUs.jsx` | ink opener + Reasons + NoList |
+| `/contact` | `Contact.jsx` | hover-image intent list + brief form |
+| `/lab` | `Lab.jsx` | scroll-scrubbed cinematic — see **/lab** below |
 | `*` | `NotFound.jsx` | 404 |
+
+**Admin routes** — not in `NAV_ITEMS`, not linked from anywhere public:
+
+| Path | Page | Notes |
+|---|---|---|
+| `/dashboard/login` | `dashboard/Login.jsx` | public; redirects away if already signed in |
+| `/dashboard` | `dashboard/Overview.jsx` | protected — counts from Mongo |
+| `/dashboard/inquiries` | `dashboard/Inquiries.jsx` | protected — list |
+| `/dashboard/inquiries/:id` | same component | protected — list + detail pane |
+
+The router has **two layout routes**, and the split is load-bearing:
+`<MarketingShell>` carries Lenis, GSAP, the cursor follower, the route wipe,
+Nav and Footer; `<AdminShell>` carries none of them. See **PHASE 2** below.
 
 ---
 
@@ -709,78 +759,649 @@ opening a dead band. Verified: no empty area after the act, no body overflow.
 
 ---
 
-## SESSION CHECKPOINT
+---
 
-**Last completed task:**
-React Bits / MCP integration pass plus the density, About-ScrollTrigger, footer
-and horizontal-scroll fixes requested for this session. Six adapted motion
-components added under `src/components/motion/`, a single-source section-rhythm
-scale in `index.css`, and six bugs fixed — four of them pre-existing and
-invisible in a still screenshot (see **Bugs found and fixed this session**).
+## /lab — the cinematic sequence
 
-**Verified, not assumed:**
-- `npm run build` passes — 555 kB JS (179 kB gzip), 78 kB CSS.
-- `oxlint` clean on every new file (only the pre-existing Nav / SmoothScroll /
-  HorizontalServices fast-refresh warnings remain).
-- Screenshot sweeps at **390 / 1440 / 1920** across all four routes: no body
-  overflow, no console or page errors on any of them.
-- `prefers-reduced-motion` pass at 1440: every headline resolves visible, the
-  ribbon is static, the dot field paints once, nothing is left hidden.
-- `interact.cjs` drives a real cursor and asserts each component reacts:
-  ProximityType wdth 100→125 / wght 700→898, Magnet translates 29px toward the
-  pointer, SignalField canvas paints, CurvedMarquee `startOffset` advances,
-  EdgeWipe 89.84 → 0 → 89.84 on enter / leave.
-- `navprobe.cjs`: nav zone matches the actually-painted ground at all 21 stops.
-- `navflow.cjs`: Home → About → Services → Home resets scroll, re-measures, and
-  the act re-pins correctly on return. No errors.
-
-**Files changed**
-
-New — `src/components/motion/`:
-`ProximityType.jsx`, `Magnet.jsx`, `CurvedMarquee.jsx`, `SignalField.jsx`,
-`EdgeWipe.jsx`, `ScrambleText.jsx`
-
-Modified:
-- `.mcp.json` (new), `components.json` (React Bits registry)
-- `src/index.css` — `ts-act` / `ts-act-sm` / `ts-act-open`, `.ts-index-row`
-- `src/lib/gsap.js` — registers `ScrambleTextPlugin`
-- `src/components/ui/MaskText.jsx` — the fromTo fix
-- `src/components/ui/ActionLink.jsx` — full-width CTA layout
-- `src/components/layout/` — `Nav.jsx` (ticker zone sample),
-  `Footer.jsx` (rebuilt), `RouteTransition.jsx`, `PageOpener.jsx`
-- `src/components/home/` — `Hero.jsx`, `Manifesto.jsx`,
-  `HorizontalServices.jsx`, `FinalCta.jsx`, `Process.jsx`, `WebSystem.jsx`,
-  `AiSystem.jsx`, `DigitalGrowth.jsx`, `GlobalPositioning.jsx`, `WhyStrip.jsx`
-- `src/components/about/` — `Principles.jsx` (rewritten), `Disciplines.jsx`,
-  `MissionVision.jsx`
-- `src/components/why-us/` — `Reasons.jsx`, `NoList.jsx`
-- `src/components/services/ServiceGroup.jsx`
-
-**Next exact action:**
-Restart Claude Code so the shadcn MCP server actually loads, then confirm its
-tools resolve the registered registry:
+**Route** `/lab` (lazy, `Lab-*.js` ~21 kB). **Not in `NAV_ITEMS`** — see Pending.
+**Asset** `frontend/public/video/scroll-video.mp4` — 3.34 MB, 1280×720,
+10.027 s, 240 frames @ 23.94 fps, H.264, 2.72 Mbps, `moov` at the front.
 
 ```
-search_items_in_registries  registries=["@react-bits"]  query="text reveal"
+pages/Lab.jsx
+└── components/lab/
+    ├── labProgress.js       one publish/subscribe store, no React state on scroll
+    ├── ScrollVideoStage.jsx sticky pin + ScrollyVideo + the prepare gate
+    ├── LabHud.jsx           sequence readout, chapter name, red scrub rail
+    ├── LabBeats.jsx         five statements, seam-clip reveals
+    ├── LabRead.jsx          the four systems (width-axis focus)
+    ├── LabHandoff.jsx       CutoutHeading statement on ink
+    └── LabSeam.jsx          paper faces parting from a centre seam
 ```
 
-After that, the outstanding polish (in priority order):
-1. Read `/services` and `/why-us` closely at 1440 — they are screenshot-clean
-   but have not had a copy / hover-state review.
-2. Lazy-load the four routes to clear the 500 kB Rollup warning.
-3. `npm uninstall @fontsource-variable/geist`.
+### THE ASSET IS THE STORY — 2 KEYFRAMES IN 10 SECONDS
 
-Nothing is half-written. The dev server may still be running on
-`127.0.0.1:5173` from this session.
+Read box by box from the MP4's own sample tables (`stss`): the file has
+**two sync samples**, at frame 1 and frame 153. A 152-frame GOP, ~6.35 s.
+
+H.264 can only begin decoding at a keyframe, so asking a `<video>` for
+`t = 6.0s` means decoding ~150 inter-frames to get there. Every scrub position
+is a fresh several-hundred-millisecond job; the browser coalesces the ones it
+cannot service; the picture arrives in chunks while the scrollbar moves
+smoothly. **This is not tunable in JS.** It is the whole reason the page reads
+as "scroll is smooth, video catches up".
+
+**Recommended re-encode (not applied — no ffmpeg on this machine).** All-intra
+makes every frame a keyframe, so every seek is instant and the `<video>` path
+becomes as smooth as the decoded one on every device, including phones:
+
+```bash
+ffmpeg -i scroll-video.mp4 \
+  -an -vcodec libx264 -profile:v high -pix_fmt yuv420p \
+  -g 1 -keyint_min 1 -sc_threshold 0 \
+  -crf 22 -preset slow \
+  -movflags +faststart \
+  scroll-video-scrub.mp4
+```
+
+`-g 1` is the load-bearing flag. Expect the file to grow (roughly 2–4×) —
+that is the trade, and it is the right one for scrubbing. If size matters more
+than sharpness, add `-vf scale=960:-2` and/or raise `-crf` to 26. Keep
+`-movflags +faststart`. A 1280×720 all-intra file at crf 22 should land around
+8–12 MB; if that is too heavy for mobile, ship **two** files and pick with
+`matchMedia` (`scroll-video-scrub.mp4` desktop, a 960-wide one for phones).
+
+### How it is driven
+
+**The pin is CSS `position: sticky`, not `ScrollTrigger.pin`.** The section is
+`100svh + var(--lab-travel)` tall and the stage sticks inside it. No pin
+spacer to re-measure on resize or route return, no spacer to strand, and
+identical behaviour on touch. ScrollTrigger only *reports* progress. This is
+why the site still has exactly one real pin (the horizontal act on Home).
+
+**One clock, one progress value.** GSAP's ticker drives Lenis (SmoothScroll),
+Lenis updates ScrollTrigger, ScrollTrigger writes `target`, and a single
+`gsap.ticker` callback in `ScrollVideoStage` reads it. No `requestAnimationFrame`
+loop is created anywhere on `/lab`. `trackScroll: false` keeps ScrollyVideo's
+own scroll listener off the page entirely.
+
+```
+GSAP ticker → lenis.raf → ScrollTrigger.update → target
+                                                   ↓
+                              one ticker callback: smoothed → pace() → video
+                                                   ↓
+                          store.set()  →  HUD / beats / four systems
+                                       →  seek(): paint or currentTime
+```
+
+**`seek()` is written synchronously — never `setVideoPercentage`.** That method
+does not move the picture; it schedules a RAF and moves it there, *and cancels
+the RAF it scheduled last time*. Driven from a ticker it is called every frame,
+so every call cancelled the write the previous one had queued and not yet
+performed: **while the wheel was turning the element was never actually
+seeked**, and only caught up when scrolling stopped and one RAF survived.
+Observed directly as `currentTime` sitting at 0 while the HUD read 27%. This
+was the single biggest cause of the "video catches up after scroll" feel.
+
+**Coupling.** Decoded path: `follow = 1` — the frame is exactly the scroll
+position, every frame. Lenis has already smoothed the scroll and easing an
+eased value is precisely what makes a scrub feel late. Seek fallback:
+`follow = 0.42` (~90 ms), because a seek per frame across a 6-second GOP is
+work the decoder cannot do. Measured drift after a hard stop: **0**.
+
+### The prepare gate
+
+Frames are decoded up front (`useWebCodecs`) on desktop, and the page is held
+at the top until they exist — `lenis.stop()` plus `html.ts-lab-locked`, with a
+minimal `PREPARING SEQUENCE` line over the poster and a rail showing **real
+decoded-frame progress**. The overlays step aside behind `[data-prep]` so the
+line does not collide with beat 01.
+
+Two deadlines: **soft 2600 ms** — release onto the seek path if, and only if,
+the `<video>` is itself ready (`readyState >= 2`), letting the canvas swap in
+silently later; **hard 6500 ms** — release regardless, so the page can never
+sit behind its own loader.
+
+`shouldDecode()` gates on `VideoDecoder`, `min-width: 1024px`, `pointer: fine`,
+and `deviceMemory >= 8`. Mobile and reduced motion never decode.
+
+### Measurements (production build, headless Chromium, software decode)
+
+| | decoded canvas | `<video>` seek |
+|---|---|---|
+| dropped frames, full pass | **3** | 25 |
+| drift after stop | **0** | 0 |
+| memory | ~833 MB of ImageBitmaps | a few MB |
+| extra network | second full 3.3 MB fetch by the demuxer | none |
+
+- Wheel-only passes: forward `0→19→39→55→68→86→100`, reverse
+  `100→87→69→56→40→21→1`, both monotone; rapid flips `19→2→18→2→19`.
+- Mobile 390 (`<video>` path): p95 **16.7 ms**, **0 dropped frames** on every
+  pass — fewer pixels to composite than desktop.
+- `loadedmetadata` 22 ms, file fetch 129 ms, but **first decoded frame 2450 ms**
+  until a decoder is requested. One muted `play()`, immediately paused, takes
+  that to **65 ms**. It must run *after* ScrollyVideo's own `loadedmetadata`
+  handler with its queued transition cancelled — that transition's first act is
+  `pause()`, which rejected the `play()` with `AbortError`.
+- Decoding to 640×360 to save memory was measured at **8.97 ms/frame against
+  1.34 ms at native** — `createImageBitmap`'s rescale is software and costs far
+  more than it saves. Do not try it again.
+- `sv.destroy()` leaves every ImageBitmap alive. They are closed by hand in the
+  cleanup, or a return visit stacks a second ~833 MB on top.
+
+### Content and interaction
+
+Six beats tied to **footage** position, not time: `A CLOSED SYSTEM.` /
+`ONE LINE OF LIGHT.` / `THEN IT OPENS.` / [the four systems] / `THE CORE.` /
+`AND IT STAYS LIT.` Reveals are the monolith's own gesture — a centre-seam
+`clip-path` opening outward while the line rises out of its mask, with tracking
+settling from `0.05em` to `-0.05em`. The clip is tweened as a **number** and
+composed in `onUpdate` (rule 8).
+
+`--lab-travel` is `420svh` desktop / `280svh` mobile, and the scroll→footage
+map is **deliberately non-linear** (`PACE`): scroll 0.44–0.72 buys footage
+0.50–0.70, so the orbit slows to a near-hold while the four systems are
+readable, without lengthening the section.
+
+**The four systems are type only.** An earlier version used a pointer-tracked
+image plate; that is already the entire left half of `/contact`, so running it
+again made the two pages read as one template, and it was hover-first. The
+mechanic now is **Archivo's width axis** — the live row opens to `wdth 116%`
+and full paper, the other three compress to `68%` and step back — with a
+scrambled mono descriptor and a red index mark on a hairline. Scroll picks the
+row; a fine pointer can override it. Nothing is hover-only.
+
+The **letterbox rails** (`--lab-rail-top` 8rem / `--lab-rail-foot` 4.25rem) are
+load-bearing twice over: they frame the picture, and they give the fixed header
+one consistent black ground for the whole sequence. All overlay type is
+paper-white everywhere — the footage runs white-room → black-machine → white,
+so any single ink colour fails somewhere; a graded left scrim carries contrast.
+
+**Mouse follower** — unchanged, one new label: `scroll: "SCROLL"` in
+`Cursor.jsx`. The pin carries `data-cursor="scroll"`, the system rows
+`data-cursor="explore"`; nested values resolve nearest-first.
+
+### React Bits — two, both rewritten
+
+| File | Origin | Why it was rewritten |
+|---|---|---|
+| `motion/CutoutHeading.jsx` | `MaskedHeading` | Copied font family/size/weight/style/letter-spacing to the SVG `<text>` **but not `font-stretch`** — this site's whole art direction is Archivo's wdth axis, so the mask rendered at 100% while the text rendered at 78% and the picture leaked out of every glyph. Also uppercased in JS (SVG does not inherit `text-transform` reliably), replaced a forever-RAF drift with a ScrollTrigger scrub + `quickTo`, stopped overriding the caller's `font-size`, and swapped its autoplaying `<video>` for the sequence's own final frame. `overflow: hidden` on the reveal because `clip-path` does not clip *scrollable* overflow — the 1.18× media pushed the document 119 px wide. |
+| `motion/FieldLines.jsx` | `MagnetLines` | `getBoundingClientRect()` **per line per pointermove** (~60 forced layout reads an event — the defect `Magnet` was rewritten to remove); a `window` listener running off-screen (`SignalField`'s bug); writes straight from the event. Now: centres computed analytically from one cached rect, IntersectionObserver-gated, one `gsap.ticker` pass behind a dirty flag. |
+
+### ⚠ `.ts-field` — a class collision I introduced, and the lesson
+
+`FieldLines` shipped as `.ts-field`, which **the contact form has owned since it
+was built**. A bare `.ts-field { display: grid; grid-template-columns: repeat(13, 1fr) }`
+re-laid every field on `/contact` into thirteen columns: labels and inputs
+collapsed to ~32 px and ran inline. Renamed to `.ts-linefield*`.
+
+The React Bits ports all had global class names taken off them; this one was
+*introduced*. **Before adding any new top-level class, diff it against the ones
+already in `index.css`** — the check is three lines of node and it would have
+caught this instantly.
+
+### Responsive
+
+Desktop ≥1024 + fine pointer: decoded canvas, per-row width-axis focus,
+420svh travel. Below that: `<video>` seek path, 280svh travel (<768), the
+statements move to the bottom edge and the scrim rotates to come from below,
+descriptors stack under their words, width range narrows to 74→100% so a wide
+row still fits its column. Verified 1920/1440/1280/1024/768/430/390/375: **no
+horizontal overflow, no console errors, no clipped text** at any width.
+
+### Reduced motion
+
+No decode, no seek, no pin, no gate. The section becomes an ordinary page: the
+poster as a still, every statement in reading order, the four systems as a
+plain list at full strength, the seam doors removed. Nothing is lost — it stops
+being revealed and is simply there.
+
+### Known limitations
+
+1. **The asset still has a 6-second GOP.** Desktop hides it by decoding; mobile
+   still seeks. The ffmpeg command above is the real fix and is the highest-value
+   next action for this page.
+2. ~833 MB of ImageBitmaps while `/lab` is mounted on desktop. Gated on
+   `deviceMemory >= 8`, closed on unmount, but it is a lot. The re-encode makes
+   the decode path unnecessary.
+3. The demuxer fetches the file a second time (a separate 200). Same fix.
+4. The prepare gate is ~3.4 s under software decode; on hardware decode it is
+   far shorter, and it self-limits at 2.6 s onto the seek path.
+5. `/lab` is not linked from anywhere. Adding it to `NAV_ITEMS` makes six
+   desktop items — check 1024 before committing to it.
 
 ---
 
+## PHASE 2 — CONTACT + DASHBOARD
+
+The first real backend feature: the contact form writes to MongoDB, sends two
+emails, and an authenticated admin dashboard reads and works the inquiries.
+
+**No secret appears in this file.** Values live in `backend/.env` (gitignored);
+`backend/.env.example` documents every key with placeholders.
+
+### The one shape decision worth knowing: `purpose`
+
+The brief's Inquiry model has `name, email, purpose, message`. **The live
+contact form has only three fields — name, email, message.** A purpose selector
+was deliberately removed earlier (2026-08-23) and the intent list on `/contact`
+is read, not operated.
+
+So `purpose` is **optional in the schema with a default of `"General Inquiry"`**,
+and the API accepts one when a caller sends it. Preserving the form UI won over
+matching the model literally, because "preserve the Contact page UI completely"
+was the stronger and more repeated instruction. Adding a purpose control later
+needs no schema change and no migration — the seeded sample rows already carry
+real purposes, which is why the dashboard reads well.
+
+### API
+
+Mounted under `/api`. Full table in `backend/README.md`.
+
+```
+POST   /api/contact                       public, rate-limited, honeypot
+GET    /api/health                        public readiness probe
+POST   /api/auth/login                    public, rate-limited
+GET    /api/auth/me                       protected
+POST   /api/auth/logout                   public by design (see below)
+GET    /api/admin/stats                   protected
+GET    /api/admin/inquiries               protected  ?page&limit&status&search
+GET    /api/admin/inquiries/:id           protected
+PATCH  /api/admin/inquiries/:id/status    protected
+```
+
+`requireAuth` is applied with `router.use("/admin", …)` — to the whole router,
+not per route — so **a route added under /admin is protected by default.**
+
+`/auth/logout` is deliberately NOT behind `requireAuth`: an expired session must
+still be able to clear its own stale cookie instead of being refused with a 401.
+
+### Inquiry model
+
+`name, email, purpose, message, status, mail{customer,internal}, meta{ip,userAgent}`
+plus `timestamps`. Statuses: `new | contacted | in-progress | closed`.
+
+- `meta` is `select: false` and stripped in `toJSON` — request metadata is for
+  spam triage, never for the client.
+- Indexes: `{createdAt:-1}` and `{status:1, createdAt:-1}` — the two shapes the
+  admin list actually queries.
+- The list endpoint returns a **180-char preview**, not the message body, and
+  clamps `limit` to 50. The response is bounded regardless of collection size.
+
+### The ordering that prevents duplicate inquiries (important)
+
+`contactController.createInquiry` does exactly this, in this order:
+
+```
+1. Inquiry.create(...)        the write
+2. res.status(201).json(...)  the visitor is done
+3. sendInquiryMail(...)       after the response, failing into the document
+```
+
+**Mail is not awaited before responding, and a mail failure never re-runs the
+write.** If delivery were awaited and threw, a client retry would create a
+second inquiry for one real message — the exact failure the brief calls out.
+The database is the source of truth; mail is a side effect that is allowed to
+fail, and its outcome is recorded on the row as `mail.customer` /
+`mail.internal` (`pending|sent|failed|skipped`) rather than shown to the
+visitor, who did nothing wrong and can do nothing about it.
+
+`services/mailer.js` **never rejects** — it resolves to a result object, because
+callers need a value they can record, not an exception that unwinds a request
+which has already committed.
+
+### Email
+
+One Gmail account is both SMTP sender and internal receiver.
+`EMAIL_APP_PASSWORD` is a Google **App Password**, not the account password.
+
+| | Subject |
+|---|---|
+| customer | `We received your message — TechnoSpirit` |
+| internal | `New Inquiry — {name} — {purpose}` |
+
+The internal message sets **`replyTo: visitor.email`** — without it, Reply in
+Gmail would address the TechnoSpirit account that sent it, which is also the
+account receiving it, i.e. a mail to itself.
+
+`services/emailTemplates.js` is table-based, fully inlined, email-safe HTML in
+the brand palette. **Archivo is deliberately not loaded** — a webfont fails in
+most clients and falls back mid-render; Helvetica/Arial carries the same Swiss
+register natively, and nothing in the layout depends on the width axis.
+Every interpolated value goes through `escapeHtml`; that is the only place in
+the codebase where an inquiry field genuinely becomes HTML.
+
+### Auth
+
+- bcrypt cost 12. `passwordHash` is `select: false`; the login path asks for it
+  explicitly. **Plaintext never reaches Mongo.**
+- JWT in an **HttpOnly** cookie `ts_admin_token`, `SameSite=Lax`, `secure` in
+  production, 7-day expiry. Verified in the browser: `document.cookie` is
+  empty and `localStorage` holds nothing.
+- `SameSite=Lax` works because the app is **same-origin** — Vite proxies `/api`
+  in dev and preview, and production sits behind one origin. Moving the API to
+  a different origin would force `SameSite=None; Secure` and reopen CSRF.
+- `requireAuth` re-reads the admin from Mongo every request, so deleting an
+  admin revokes the session immediately rather than at token expiry.
+- Login gives **one message** for "no such admin" and "wrong password", and
+  runs bcrypt against a real dummy hash when no admin matched so both paths
+  take the same time. (The dummy must be a *valid* hash — bcryptjs returns
+  false instantly for a malformed one, reintroducing the timing signal.)
+- `bootstrapAdmin` is **idempotent**: it never overwrites an existing admin, so
+  editing `ADMIN_INITIAL_PASSWORD` does nothing on its own. Reset procedure is
+  in `backend/README.md`.
+
+### Frontend auth
+
+`context/authContext.js` (context + `useAuth`) and `context/AuthProvider.jsx`.
+
+`status` is a **three-state**: `checking | authenticated | anonymous`, and the
+third value is the point. Until the first `GET /api/auth/me` resolves the answer
+is genuinely unknown, and **a protected route that treats "unknown" as "signed
+out" bounces a signed-in admin to login on every refresh.** `ProtectedRoute`
+renders a quiet hold while checking. This is what makes refreshing `/dashboard`
+keep you signed in.
+
+`ProtectedRoute` decides what is *rendered* — it is **not** the security
+boundary. `/api/admin/*` is defended server-side; a caller who skips React
+entirely still gets a 401.
+
+### The two-shell router split (do not merge these)
+
+`App.jsx` has two layout routes:
+
+- `<MarketingShell>` — Lenis, GSAP ticker, `<Cursor>`, `<RouteTransition>`,
+  `<Nav>`, `<Footer>`, grain layer, `warmRoutes()`.
+- `<AdminShell>` — **none of it.**
+
+Three reasons, in order of weight:
+1. The dashboard is not linked from public navigation and must not advertise
+   itself by appearing in the site chrome.
+2. An operational interface should be instant. Lenis intercepts the wheel and a
+   0.9s route wipe is the wrong feel for a tool opened forty times a day.
+3. Native scroll is what a long list and a scrollable detail pane both want,
+   including keyboard paging, which smooth-scroll hijacking interferes with.
+
+Dashboard chunks are lazy for audience, not weight: a visitor who never opens
+`/dashboard` downloads none of it.
+
+### Dashboard design
+
+`src/styles/dashboard.css`, `@import`ed by `index.css`. Kept out of index.css
+because that file is the *site's* design system and this is a separate surface.
+
+Same identity — Archivo, JetBrains Mono microcopy, zero radius, hard rules,
+black/white/red — at tool density. **Every transition is a sub-200ms colour or
+border change on a real interaction.** No scroll-driven motion, no entrance
+staggers.
+
+- **Red means exactly one thing: `NEW`** — "nobody has dealt with this yet".
+  The other three statuses are separated by *fill*, not hue (outline =
+  contacted, solid white = in-progress, dim = closed), so the list reads at a
+  glance and red never becomes decoration.
+- Stat tiles are one hairline grid drawn with a 1px gap over a lit background —
+  the site's rule-and-hairline structure, not four floating cards.
+- The active sidebar link and the selected list row share one device: a red
+  leading edge. "Where am I" reads the same way in both places.
+- Sidebar `SECTIONS` is the whole nav model. Adding AI Conversations / Leads /
+  Analytics / Settings later is one entry + one route each. They are named in
+  the sidebar footer as a roadmap rather than rendered as dead links —
+  disabled links for modules that do not exist would be the fabricated-proof
+  problem in a new place.
+
+### ⚠ `position: sticky` needs room in its containing block
+
+`.ts-inq-split` originally had `align-items: start`, which shrank the detail
+column to exactly the pane's own height. A sticky element can only travel
+inside its containing block, so with zero slack **the detail pane scrolled away
+with the page instead of holding** — measured `detailTop: -119px` when it should
+have been pinned at 84. Fixed with `align-items: stretch`, which stretches the
+column to the grid row (the list's height) and gives sticky somewhere to move.
+Verified: `detailTop: 84`, exactly the intended offset.
+
+This is the same class of bug as the `.ts-field` collision — a layout property
+set for one reason silently breaking a mechanism somewhere else.
+
+### Responsive
+
+Verified 1440 / 1024 / 768 / 430 / 390, zero horizontal overflow at every width.
+
+- **> 1100px** — two-pane master/detail.
+- **≤ 1100px** — the detail becomes its own full-width view and the list steps
+  aside. Not two panes squeezed into 390px.
+- **≤ 900px** — sidebar becomes an off-canvas drawer with a veil, Esc to close,
+  body scroll locked, closes on navigation. Logout moves into the drawer.
+- **≤ 720px** — stat grid 4 → 2; recent rows re-flow to two lines.
+- **≤ 460px** — stat tiles become label/value **rows**; four stacked full-height
+  tiles would have pushed the list off-screen.
+
+`/dashboard/inquiries/:id` is a real URL — deep-linkable, bookmarkable, and it
+survives a refresh with its status intact.
+
+### Spam protection
+
+Rate limiting (5 contact / 10 min, 8 login / 15 min with successes not counted,
+120 admin / min) + a **honeypot** `website` field + server-side validation.
+
+The honeypot is moved off-screen rather than `display: none` — a bot that skips
+undisplayed inputs would skip the trap too — and is `aria-hidden` with
+`tabindex="-1"` so no real visitor can reach it. When tripped the API answers
+**201 with the ordinary success shape**; telling a bot it was detected just
+teaches the next attempt to leave the field alone.
+
+CAPTCHA/Turnstile can be added as one more middleware in front of
+`createInquiry` without touching anything else.
+
+### Environment variables required
+
+Documented with placeholders in `backend/.env.example`:
+
+```
+NODE_ENV  PORT  MONGO_URI
+JWT_SECRET  JWT_EXPIRES_IN
+ADMIN_EMAIL  ADMIN_INITIAL_PASSWORD
+EMAIL_USER  EMAIL_APP_PASSWORD  CONTACT_RECEIVER
+CLIENT_ORIGIN
+```
+
+`config/env.js` is the only file that reads `process.env`, and `assertEnv()`
+fails the boot on a missing `MONGO_URI`/`JWT_SECRET`, a sub-32-char secret in
+production, or the `.env.example` placeholder shipped unchanged. Missing mail
+credentials are a **warning, not a failure** — inquiries still save.
+
+### Error handling
+
+One exit: `middleware/errorHandler.js`. **Only an `AppError` has its message
+forwarded to the caller.** Anything else is logged in full server-side and
+answered with one generic sentence — no stack trace, no Mongo text, no path, no
+connection string. Mongoose `ValidationError` → field map, `CastError` → 404,
+duplicate key → 400, and body-parser's `entity.too.large` → a clean **413**
+(it was surfacing as an opaque 500 until that was added).
+
+A CORS denial is an `AppError.forbidden`, not a bare `Error` — a bare one fell
+through to the "unexpected" branch and became a 500 reading "Something went
+wrong on our end.", which is exactly the wrong thing to tell an operator whose
+real problem is a missing `CLIENT_ORIGIN` entry.
+
+### Testing status — actually run, not assumed
+
+Harness: `…/bccd29cc-…/scratchpad/pw/tsflow.cjs` (79 assertions).
+**79/79 pass against `vite dev` AND against the production build via
+`vite preview`.**
+
+Covered: contact UI preserved · client validation · **3 rapid clicks → 1 POST →
+1 inquiry** · direct `/dashboard` → login · wrong password · login · cookie is
+HttpOnly/Lax and unreadable from JS · nothing in localStorage · overview counts
+match the DB · **refresh stays signed in** · list/search/filter/pagination ·
+newest-first · detail · status change persisted to Mongo and surviving refresh ·
+Gmail reply URL (recipient + subject prefilled, no credential) · 5 breakpoints ·
+mobile drawer · logout → protected route inaccessible · forged JWT → login ·
+backend unavailable → readable message, no stack · all 6 public routes
+unchanged · dashboard absent from public nav · zero console errors.
+
+Also verified by hand: rate limiters (login locks after 7 failures; contact
+`RateLimit-Policy: 5;w=600`), honeypot (201, **no** inquiry created, logged
+server-side), regex-injection search `(a+)+$` returns cleanly, `limit=9999`
+clamps to 50, malformed JSON → 400, oversized body → 413, bad ObjectId → 404,
+CORS denial → clean 403.
+
+**Email delivery is REAL and verified** — SMTP verified at boot and three pairs
+of messages actually sent (`[mail] customer-confirmation: sent`,
+`[mail] internal-notification: sent`), with `mail:{customer:"sent",
+internal:"sent"}` recorded on the documents.
+
+`npm run build` passes. `oxlint` clean (no errors; only the pre-existing
+warning classes already present in `SmoothScroll`/`Nav`/`button`).
+
+### Known issues / next steps
+
+1. **`purpose` is `"General Inquiry"` for every real submission**, because the
+   form has no purpose field. Decide whether to add one (it would change the
+   Contact UI, which this phase was told not to touch) or leave it.
+2. Entry chunk is 531 kB — the pre-existing >500 kB Rollup warning, essentially
+   unchanged by this work (dashboard code is all in lazy chunks).
+3. Rate-limit state is **in-memory** — it resets on restart and is per-process.
+   A multi-instance deployment needs a shared store (Redis).
+4. Once locked out, even a correct password waits out the 15-minute window.
+   Correct brute-force behaviour, but worth knowing before someone panics.
+5. The dev database holds 12 seeded rows plus real test submissions.
+   `npm run seed:reset` clears everything.
+6. No password-change UI yet — `mustChangePassword` is recorded on the admin
+   but nothing reads it. Rotation is the manual procedure in the README.
+7. `/dashboard` has no link from anywhere, by design. Reach it by URL.
+
+
+## SESSION CHECKPOINT
+
+**Last completed task:**
+Built `/lab` — a scroll-scrubbed cinematic sequence around
+`public/video/scroll-video.mp4` — then fixed its scrub smoothness properly and
+repaired a class collision it had introduced on `/contact`.
+
+**Verified, not assumed:**
+- `npm run build` passes. 499 kB entry (164 kB gzip), 95 kB CSS; `/lab` is a
+  21 kB chunk and ScrollyVideo+mp4box a separate lazily-fetched 165 kB.
+- `oxlint` clean across every new file.
+- **Every route walked top to bottom at 1440 and 390**, 11–19 scroll stops each:
+  zero horizontal overflow, zero console/page errors, zero dead scrub bars, and
+  the header's light/dark state matches the ground painted under it at every
+  stop on all six routes.
+- Widths 1920/1440/1280/1024/768/430/390/375 in both motion modes: no overflow,
+  no errors, no clipped text.
+- Scrub, wheel-only: forward and reverse both monotone, rapid direction flips
+  track cleanly, **drift after a hard stop is 0**.
+- Mobile 390: p95 16.7 ms, **0 dropped frames** on every pass.
+- `/contact` restored — `.ts-field` is `display: block` again and inputs are
+  full column width (501 px at 1440, 350 px at 390).
+
+**The one thing worth reading before touching this page again:**
+the source MP4 has **2 keyframes in 10 seconds**. Everything unusual in
+`ScrollVideoStage.jsx` — the up-front decode, the prepare gate, the synchronous
+seek — exists because of that. The ffmpeg re-encode in the **/lab** section
+removes the need for most of it.
+
+**Files added**
+- `src/pages/Lab.jsx`
+- `src/components/lab/` — `labProgress.js`, `ScrollVideoStage.jsx`, `LabHud.jsx`,
+  `LabBeats.jsx`, `LabRead.jsx`, `LabHandoff.jsx`, `LabSeam.jsx`
+- `src/components/motion/` — `CutoutHeading.jsx`, `FieldLines.jsx`
+- `public/lab/` — `poster.webp`, `handoff.webp`, `final.webp` (cut from the
+  footage itself with Playwright + canvas, so the page ships no foreign imagery)
+
+**Files modified**
+- `src/App.jsx` (lazy `/lab` route), `src/index.css` (LAB + CUTOUT + FIELD LINES
+  + SEAM blocks, ~800 lines), `src/components/layout/Cursor.jsx` (one added
+  label: `scroll`)
+- `package.json` — `scrolly-video@^0.0.24` (deps: mp4box, ua-parser-js)
+
+**Carried forward (still open from the /lab session):**
+Re-encode the video all-intra with the ffmpeg command in the **/lab** section
+and drop it in as `scroll-video.mp4`. Then `shouldDecode()` can return
+`false` unconditionally, which removes ~833 MB of ImageBitmaps, the duplicate
+download, and the prepare gate in one move — and makes mobile as smooth as
+desktop. After that, decide whether `/lab` joins `NAV_ITEMS` (six desktop items
+— check 1024 first); it is currently reachable only by URL.
+
+---
+
+## SESSION CHECKPOINT — Phase 2 (2026-08-25)
+
+**Last completed task:**
+Built the first real backend feature end to end — `POST /api/contact` →
+MongoDB → two transactional emails, plus a JWT/cookie-authenticated admin
+dashboard at `/dashboard`. Full detail in **PHASE 2 — CONTACT + DASHBOARD**.
+
+Also changed this session (single-line, unrelated): the Home hero CTA is now
+`BEYOND THE ORDINARY → /lab` (was `START A PROJECT → /contact`). Only
+`components/home/Hero.jsx` changed; the FinalCta, Nav and Footer CTAs still
+read START A PROJECT and still point at `/contact`.
+
+**Verified, not assumed:**
+- **79/79 browser assertions pass** against `vite dev` *and* against the
+  production build via `vite preview` (`…/pw/tsflow.cjs`).
+- **Real email delivery** — SMTP verified at boot, three pairs of messages
+  actually sent, `mail:{customer:"sent",internal:"sent"}` on the documents.
+- 3 rapid clicks → 1 POST → 1 inquiry. Refresh keeps the session. Logout makes
+  protected routes inaccessible. Forged JWT → login.
+- Cookie is HttpOnly + SameSite=Lax; `document.cookie` empty, localStorage empty.
+- 1440/1024/768/430/390: zero horizontal overflow; drawer works at 390.
+- All six public routes unchanged, zero console errors, Lenis still active on
+  the marketing shell and absent from the dashboard.
+- `npm run build` passes; `oxlint` has no errors.
+
+**Three bugs found and fixed while testing (all real):**
+1. **`position: sticky` with no room** — `align-items: start` shrank the detail
+   column to the pane's own height, so the pane scrolled away instead of
+   holding (`detailTop: -119` vs the intended `84`). → `align-items: stretch`.
+2. **CORS denial surfaced as an opaque 500** ("Something went wrong on our
+   end.") because the rejection was a bare `Error`. → `AppError.forbidden`, now
+   a clean 403 naming the origin.
+3. **Oversized body → 500** instead of 413. → `entity.too.large` handled.
+
+**Files added**
+- `backend/` — config (env, db), models (Inquiry, Admin), controllers ×3,
+  middleware ×4, routes ×4, services (mailer, emailTemplates), utils ×5
+- `src/lib/api.js`, `src/lib/formatDate.js`
+- `src/context/authContext.js`, `src/context/AuthProvider.jsx`
+- `src/components/dashboard/` — DashboardLayout, ProtectedRoute, InquiryDetail,
+  StatusPill
+- `src/pages/dashboard/` — Login, Overview, Inquiries
+- `src/styles/dashboard.css`
+
+**Files modified**
+- `src/App.jsx` — split into `<MarketingShell>` / `<AdminShell>` layout routes
+- `src/components/contact/ContactForm.jsx` — wired to the API; honeypot,
+  in-flight guard, server-field errors, network-failure line. **No design
+  change** — same three fields, same CTA, same copy.
+- `src/index.css` — `@import "./styles/dashboard.css"` + `.ts-form-error`,
+  `.ts-honeypot`
+- `frontend/vite.config.js` — `/api` proxy for dev and preview
+- `backend/` — package.json, .env.example, .gitignore, README.md
+
+**Next exact action:**
+Decide the `purpose` question (issue 1 in PHASE 2 → Known issues): every real
+submission currently stores `"General Inquiry"` because the contact form has no
+purpose field, and adding one would change the Contact UI this phase was told
+to preserve. Then rotate `ADMIN_INITIAL_PASSWORD` off the dev value before this
+is exposed anywhere beyond localhost.
+
 ## Last Major Update
 
-React Bits / shadcn-MCP integration and density pass. The site went from
-"correct but empty" to dense and cinematic: section rhythm centralised and cut
-35%, Home 17.5k → 14.7k px at 1440, the horizontal act shortened from ~5.8 to
-~4 viewports, the footer rebuilt around full-bleed route rows, and six real
-bugs fixed — most importantly the `MaskText` reveal and the Tailwind-v4
-`scale`/`translate` vs. GSAP `transform` conflict, which between them were
-leaving whole headlines and every scrubbed progress bar invisible.
+**Phase 2 — contact inquiries, email and the admin dashboard.** The contact
+form now writes to MongoDB and sends two brand-designed transactional emails
+(customer confirmation + internal notification with `replyTo` set to the
+visitor), and `/dashboard` is a real authenticated operator interface with
+overview counts, a searchable/filterable/paginated inquiry list, a detail pane
+with status changes that persist, and a Gmail compose hand-off.
+
+The two decisions that shaped it: **the database is the source of truth and
+mail is a side effect that is allowed to fail** — the write happens, the
+visitor is answered, and only then is mail dispatched, which is what makes a
+delivery failure unable to produce a duplicate inquiry; and **the dashboard is
+deliberately not the website** — it runs in its own layout shell with no Lenis,
+no GSAP, no cursor follower and no route wipe, because an operational interface
+should be instant while keeping the same black/white/red identity.
+
+Previously: `/lab`, a scroll-controlled cinematic built on ScrollyVideo, with
+its scrub traced to ScrollyVideo cancelling its own pending seeks and to an
+asset with a 6-second GOP (the ffmpeg re-encode is still waiting).

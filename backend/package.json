@@ -2,14 +2,32 @@
   "name": "technospirit-backend",
   "version": "0.1.0",
   "private": true,
-  "description": "TechnoSpirit API — scaffold only. Not implemented in Phase 1.",
+  "description": "TechnoSpirit API — contact inquiries, mail and the admin dashboard.",
   "type": "module",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "dev": "node --watch server.js"
+    "dev": "node --watch server.js",
+    "seed": "node utils/seedDev.js",
+    "seed:reset": "node utils/seedDev.js --reset"
+  },
+  "engines": {
+    "node": ">=20"
   },
   "keywords": [],
   "author": "TechnoSpirit",
-  "license": "UNLICENSED"
+  "license": "UNLICENSED",
+  "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "cookie-parser": "^1.4.7",
+    "cors": "^2.8.6",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "express-rate-limit": "^8.6.2",
+    "express-validator": "^7.3.2",
+    "helmet": "^8.3.0",
+    "jsonwebtoken": "^9.0.3",
+    "mongoose": "^9.9.3",
+    "nodemailer": "^9.0.5"
+  }
 }

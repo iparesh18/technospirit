@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 1000" width="800" height="1000" role="img" aria-label="An unresolved field — interference patterns with one signal cutting through.">
+  <defs>
+    <filter id="g" x="0" y="0" width="100%" height="100%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="3" stitchTiles="stitch"/>
+    </filter>
+    <pattern id="rule" width="14" height="14" patternUnits="userSpaceOnUse">
+      <path d="M0 0V14" stroke="#fff" stroke-opacity=".5" stroke-width="1.4"/>
+    </pattern>
+    <pattern id="ruleB" width="14" height="14" patternUnits="userSpaceOnUse" patternTransform="rotate(9)">
+      <path d="M0 0V14" stroke="#fff" stroke-opacity=".5" stroke-width="1.4"/>
+    </pattern>
+    <mask id="band">
+      <rect width="800" height="1000" fill="#fff"/>
+      <rect x="0" y="430" width="800" height="150" fill="#000"/>
+    </mask>
+    <clipPath id="inband">
+      <rect x="0" y="430" width="800" height="150"/>
+    </clipPath>
+  </defs>
+
+  <rect width="800" height="1000" fill="#000"/>
+
+  <!-- interference: two rule fields, one phase-shifted -->
+  <g mask="url(#band)">
+    <rect width="800" height="1000" fill="url(#rule)"/>
+    <rect width="800" height="1000" fill="url(#ruleB)"/>
+  </g>
+
+  <!-- the band where the pattern resolves -->
+  <rect x="0" y="430" width="800" height="150" fill="#ff2d16"/>
+  <g clip-path="url(#inband)">
+    <rect width="800" height="1000" fill="url(#rule)" opacity=".55" style="mix-blend-mode:multiply"/>
+  </g>
+
+  <!-- one signal crossing everything -->
+  <path d="M-20 940L820 60" fill="none" stroke="#000" stroke-width="9"/>
+  <path d="M-20 940L820 60" fill="none" stroke="#ff2d16" stroke-width="2"/>
+
+  <!-- the brief that is not on the list yet -->
+  <rect x="330" y="150" width="140" height="140" fill="#000"/>
+  <g fill="none" stroke="#fff" stroke-opacity=".8">
+    <rect x="330" y="150" width="140" height="140"/>
+    <path d="M330 150l140 140M470 150L330 290"/>
+  </g>
+
+  <!-- edge registration -->
+  <g stroke="#fff" stroke-opacity=".55" fill="none">
+    <path d="M40 40h60M40 40v60M760 960h-60M760 960v-60"/>
+  </g>
+
+  <rect width="800" height="1000" filter="url(#g)" opacity=".15" style="mix-blend-mode:screen"/>
+</svg>

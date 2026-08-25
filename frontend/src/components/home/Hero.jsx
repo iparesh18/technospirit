@@ -216,8 +216,8 @@ export default function Hero() {
 
             <div data-hero-body className="mt-6">
               <Magnet padding={70} strength={4} className="w-full sm:w-auto">
-                <ActionLink to="/services" className="w-full sm:w-auto">
-                  START A PROJECT
+                <ActionLink to="/lab" className="w-full sm:w-auto">
+                  BEYOND THE ORDINARY
                 </ActionLink>
               </Magnet>
             </div>

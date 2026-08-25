@@ -1,5 +1,5 @@
 import { lazy, Suspense, useEffect, useRef, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import MaskText from "@/components/ui/MaskText";
 import Reveal from "@/components/ui/Reveal";
 import { ActionLink } from "@/components/ui/ActionLink";
@@ -178,6 +178,14 @@ function Wordmark({ lines, tone = "paper", stacked = false }) {
 export default function Footer() {
   const clocks = useWorldClock();
   const year = new Date().getFullYear();
+  /**
+   * The closing statement is a contact CTA — "Let's build what's next." plus a
+   * START A PROJECT button. Below the contact page itself it would be asking
+   * for the thing the visitor is already doing, and it would land a second,
+   * competing headline directly under the form. The rest of the footer (the
+   * link matrix, coverage, the wordmark) still closes the page.
+   */
+  const onContactPage = useLocation().pathname === "/contact";
 
   return (
     <footer
@@ -211,6 +219,7 @@ export default function Footer() {
       <div className="absolute inset-x-0 top-0 z-10 h-px bg-signal/60" aria-hidden="true" />
 
       {/* ── closing statement ─────────────────────────────────────────── */}
+      {!onContactPage && (
       <div className="ts-shell relative border-b border-white/16 pt-16 pb-12 sm:pt-20 sm:pb-14">
         <div className="ts-grid items-end">
           <div className="col-span-12 lg:col-span-8">
@@ -233,13 +242,14 @@ export default function Footer() {
 
           <div className="col-span-12 mt-9 lg:col-span-4 lg:mt-0 lg:justify-self-end">
             <Magnet padding={70} strength={4}>
-              <ActionLink to="/services" tone="outline" className="w-full sm:w-auto">
+              <ActionLink to="/contact" tone="outline" className="w-full sm:w-auto">
                 START A PROJECT
               </ActionLink>
             </Magnet>
           </div>
         </div>
       </div>
+      )}
 
       {/* ── capabilities + contact + coverage ─────────────────────────── */}
       <div className="ts-shell relative border-b border-white/16 py-12">
