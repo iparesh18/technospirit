@@ -1,0 +1,954 @@
+/* ==========================================================================
+   /capabilities
+   Imported from CapabilitiesExperience.jsx, NOT from index.css — that is what
+   keeps it inside the dynamically imported chunk so a phone never downloads it.
+   Written in plain CSS against the design-system tokens for the same reason:
+   nothing here may depend on being compiled alongside the Tailwind entry.
+   ========================================================================== */
+
+.cap-root {
+    position: relative;
+    background: #000;
+    color: #fff;
+}
+
+/* Each act is a tall block whose only job is to give its stage a scroll
+   distance. The stage itself is `position: sticky`, not ScrollTrigger.pin —
+   same call as /lab, and for the same reasons: no pin-spacer to re-measure on
+   resize or on route return, and the site's one real pin stays spent on the
+   horizontal act. ScrollTrigger is left doing the thing it is exact at,
+   which is reporting progress. */
+.cap-act {
+    position: relative;
+    height: var(--cap-travel);
+}
+
+.cap-stage {
+    position: sticky;
+    top: 0;
+    height: 100svh;
+    overflow: hidden;
+    /* The blend modes below must resolve against this stage and never reach
+       the page behind it. */
+    isolation: isolate;
+    background: #000;
+}
+
+.cap-layer {
+    position: absolute;
+    inset: 0;
+}
+
+/* ==========================================================================
+   BEAT 1 — THE OPENING
+   White paper, one word, and a window the pointer opens in it.
+   ========================================================================== */
+.cap-open {
+    background: var(--color-paper);
+}
+
+.cap-open-frame {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    pointer-events: none;
+}
+
+.cap-open-rules {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    display: grid;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+}
+
+.cap-open-rules > i {
+    border-right: 1px solid var(--color-hair);
+}
+
+/**
+ * The word.
+ *
+ * Rendered WHITE and composited with `difference`, which is what makes it read
+ * as black on the paper (|255 - 255| = 0) and flip to white the instant the
+ * lens puts black behind it (|0 - 255| = 255). One blend layer does the whole
+ * inversion — no duplicate element, no clip-path on the type, and nothing that
+ * has to be kept in sync with the lens's position.
+ */
+.cap-open-title {
+    position: relative;
+    z-index: 4;
+    margin: 0;
+    color: #fff;
+    mix-blend-mode: difference;
+    text-align: center;
+    font-size: clamp(3.5rem, 15.2vw, 15rem);
+    padding-inline: clamp(1.25rem, 4vw, 4.5rem);
+}
+
+.cap-open-sub {
+    position: relative;
+    z-index: 4;
+    margin-top: clamp(1.75rem, 3vw, 2.75rem);
+    display: flex;
+    justify-content: center;
+    gap: clamp(1rem, 2.4vw, 2.5rem);
+    color: #fff;
+    mix-blend-mode: difference;
+    text-align: center;
+}
+
+.cap-open-sub span {
+    display: block;
+}
+
+/* The hint sits under the word and retires the moment the pointer proves it
+   has been understood. */
+.cap-open-hint {
+    position: absolute;
+    left: 50%;
+    bottom: clamp(2rem, 5vh, 4rem);
+    transform: translateX(-50%);
+    z-index: 4;
+    color: #fff;
+    mix-blend-mode: difference;
+    white-space: nowrap;
+}
+
+/* ── the lens ─────────────────────────────────────────────────────────────
+   A fixed-size box that never changes size. Position, rotation and squash are
+   all `transform`, so every frame of this is compositor work and none of it
+   touches layout or paint. The window shape is a static mask, so it costs
+   nothing per frame either.
+
+   The image inside is counter-transformed by <RevealLens> so it stays welded
+   to the viewport — which is what makes this a hole in the paper rather than a
+   picture riding the cursor. */
+.cap-lens {
+    position: fixed;
+    left: 0;
+    top: 0;
+    /* width/height are written by usePointerLens from the same `size` the
+       geometry uses — one source of truth for the box. */
+    z-index: 3;
+    pointer-events: none;
+    opacity: 0;
+    /**
+     * THE WINDOW SHAPE, and why the clip lives here rather than on the inner.
+     *
+     * The inner element is counter-ROTATED, so its own square edges do not line
+     * up with this box — clipping there put the corners of a tilted square
+     * inside the mask's reach and the window came out as a spinning octagon.
+     * Clipping on this element instead means the content is cut to THIS box,
+     * which is the box the mask is drawn in.
+     *
+     * `closest-side` sizes the gradient to half the box rather than to its
+     * diagonal, so the falloff reaches zero exactly at the inscribed circle and
+     * the four points where that circle meets the square are already
+     * transparent. What is left is a clean circle at every rotation.
+     */
+    overflow: hidden;
+    -webkit-mask-image: radial-gradient(circle closest-side at 50% 50%, #000 0%, #000 62%, rgba(0, 0, 0, 0.7) 78%, rgba(0, 0, 0, 0.2) 91%, transparent 100%);
+    mask-image: radial-gradient(circle closest-side at 50% 50%, #000 0%, #000 62%, rgba(0, 0, 0, 0.7) 78%, rgba(0, 0, 0, 0.2) 91%, transparent 100%);
+    -webkit-mask-repeat: no-repeat;
+    mask-repeat: no-repeat;
+}
+
+/* The wake. Same construction, longer lag, and only visible while the pointer
+   is actually moving — at rest there is exactly one window on screen. */
+.cap-lens-wake {
+    z-index: 2;
+}
+
+.cap-lens-inner {
+    position: absolute;
+    inset: 0;
+}
+
+/* Sized to the viewport and translated by the negative pointer position, so
+   the pixel under the cursor is always the pixel that belongs there. */
+.cap-lens-img {
+    /* See the note above .cap-hand: preflight's `max-width: 100%` clamps this
+       to the 300px window and the reveal comes out empty. */
+    max-width: none;
+    position: absolute;
+    left: 0;
+    top: 0;
+    /**
+     * A shade larger than the stage and centred on it.
+     *
+     * The reveal image is a full-frame composition — a visor filling the middle
+     * of the frame with starfield running out to the corners — so unlike the
+     * hand plates it needs no framing offset. The 8% over-size is only so that
+     * the lens's refraction, which displaces content outward near the rim, can
+     * never pull an edge of the picture into the window.
+     */
+    width: calc(var(--cap-stage-w, 100vw) * 1.08);
+    height: calc(var(--cap-stage-h, 100svh) * 1.08);
+    left: calc(var(--cap-stage-w, 100vw) * -0.04);
+    top: calc(var(--cap-stage-h, 100svh) * -0.04);
+    object-fit: cover;
+    transform-origin: 0 0;
+    background: #000;
+}
+
+
+/* ── the intent trail ─────────────────────────────────────────────────────
+   React Bits ImageTrail, art-directed. See `ImageTrail.jsx` for what changed
+   and why; this is the print itself.
+
+   THE LAYER ORDER OF THE OPENING BEAT, top to bottom:
+
+     4   CAPABILITIES / the sub-line / the hint   (white, mix-blend difference)
+     3   the lens
+     2   the lens's wake
+     1   the intent trail          <- this
+     0   the six vertical rules
+         the paper
+
+   The type is above the trail rather than below it, which is what makes the
+   word safe: it is white in `difference`, so a print passing under it does not
+   cover it — the word inverts through the photograph and stays legible on
+   every frame by construction rather than by our restraint. The lens is above
+   the trail for the same physical reason the trail is above the rules: the
+   window is a hole through everything sitting on the paper, and the prints are
+   sitting on the paper.
+
+   `pointer-events: none` is not optional here. The fixed header decides its own
+   light/dark state by hit-testing what is painted beneath it, and a
+   full-viewport hit-testable layer over the opening beat is the first thing
+   that test would find. It also keeps this layer out of the way of the lens,
+   the follower and the nav, and — with `user-select` — makes a fast drag
+   across the stage unable to start a selection on a photograph.
+   ──────────────────────────────────────────────────────────────────────── */
+.cap-trail {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    pointer-events: none;
+    -webkit-user-select: none;
+    user-select: none;
+
+    /* One card width for the whole beat. Wide enough at 1280 to read as a
+       print rather than a thumbnail, capped before it starts competing with
+       the headline it is laid out around. */
+    --cap-trail-w: clamp(152px, 12.2vw, 208px);
+    --cap-trail-pad: 5px;
+}
+
+/* The positioner. x/y only, ever — the card inside owns everything else, so
+   the travel tween and the settle tween can never write the same property. */
+.cap-trail-plate {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: var(--cap-trail-w);
+}
+
+/* The print. Paper margin, square corners, and a hairline so a white margin
+   on white paper still has an edge. */
+.cap-trail-card {
+    display: block;
+    background: var(--color-paper);
+    padding: var(--cap-trail-pad);
+    box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.08);
+    transform-origin: 50% 50%;
+    clip-path: inset(0% 0% 0% 0%);
+    opacity: 0;
+}
+
+/* One window shape for all five pictures. The sources are 4:5 and 2:3; 3:4
+   sits between them, so every print is the same box with a modest crop rather
+   than a set of five different rectangles flying about. Equal boxes are also
+   what lets the component measure ONE plate and use it for all ten. */
+.cap-trail-img {
+    display: block;
+    width: 100%;
+    height: auto;
+    aspect-ratio: 3 / 4;
+    object-fit: cover;
+    background: var(--color-hair);
+}
+
+/* The caption. The site numbers its routes 01..06 in this exact face; these
+   are the five intents /contact names, numbered the same way.
+
+   Two lines are reserved whether or not the word needs them, so every print
+   is the same height — see the measure note above. Tracking is pulled in from
+   the label default because this is the same type at a much smaller measure,
+   and tracking is a size-specific decision, not a token. */
+.cap-trail-cap {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 0 0.7em;
+    align-items: start;
+    min-height: 2.7em;
+    padding: 0.62rem 0.15rem 0.15rem;
+    letter-spacing: 0.11em;
+    line-height: 1.35;
+    color: var(--color-ink);
+}
+
+.cap-trail-cap b {
+    font-weight: inherit;
+    color: var(--color-signal-ink);
+}
+
+.cap-trail-cap i {
+    font-style: normal;
+}
+
+/* ── the rim ──────────────────────────────────────────────────────────────
+   Three rings that sit just inside the mask's falloff and disperse along the
+   direction of travel — red leading, blue trailing, green between them.
+
+   They are children of the WINDOW rather than of the counter-rotated inner, on
+   purpose: the window is already rotated to the heading, so a plain translate
+   on local x separates the channels along the axis the lens is moving, with no
+   trigonometry per frame. Their radii are staggered so that even at rest the
+   boundary carries three distinct lines rather than one fat halo.
+
+   `screen` because these are light being split, not paint being added: over
+   the dark side of the reveal they show, and over the white paper outside it
+   they vanish, which is where a real fringe would and would not be visible.
+   Everything about them is static except a transform and an opacity. */
+.cap-fringe {
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    pointer-events: none;
+    mix-blend-mode: screen;
+    opacity: 0;
+}
+
+.cap-fringe-r {
+    background: radial-gradient(
+        circle closest-side,
+        transparent 0%,
+        transparent 61%,
+        rgba(255, 45, 22, 0.9) 72%,
+        rgba(255, 45, 22, 0.28) 80%,
+        transparent 88%
+    );
+}
+
+.cap-fringe-g {
+    background: radial-gradient(
+        circle closest-side,
+        transparent 0%,
+        transparent 65%,
+        rgba(64, 255, 150, 0.62) 75%,
+        rgba(64, 255, 150, 0.2) 83%,
+        transparent 91%
+    );
+}
+
+.cap-fringe-b {
+    background: radial-gradient(
+        circle closest-side,
+        transparent 0%,
+        transparent 68%,
+        rgba(56, 132, 255, 0.9) 79%,
+        rgba(56, 132, 255, 0.26) 87%,
+        transparent 95%
+    );
+}
+
+/* ==========================================================================
+   BEAT 2 — HUMAN x MACHINE
+   ========================================================================== */
+.cap-hands {
+    /* `size` (not `inline-size`) so cqh is available: the plate's height is
+       derived from its width, and the vertical placement of the fingertip is
+       measured against the stage's height. Both axes are needed. */
+    container-type: size;
+    opacity: 0;
+    background: #000;
+}
+
+/**
+ * FINGERTIP ALIGNMENT — the part everything else depends on.
+ *
+ * Both plates are 1672x941 and both were measured, not estimated: the tip is
+ * found as the extreme column of the plate carrying a lit run against the pure
+ * black ground, and the numbers below are that column and the vertical centre
+ * of its run, normalised. They are stable across a 10/18/28 luminance
+ * threshold, so they are the fingertip and not a highlight.
+ *
+ *   human  tip at pixel (1047, 416.0)  ->  (0.62620, 0.44208)
+ *   robot  tip at pixel ( 639, 362.5)  ->  (0.38218, 0.38523)
+ *
+ * Note the vertical numbers are 5.7% of the plate height apart. Animating both
+ * plates to "centre" would therefore miss by that much at every viewport —
+ * roughly 60px at 1080 — which is the whole reason this is done in coordinates
+ * instead of percentages.
+ *
+ * Each plate is placed so that ITS OWN tip lands on the contact point, and
+ * only `x` is ever animated. That means both tips travel along the same
+ * horizontal line for the entire approach and arrive exactly, at every
+ * viewport size, with no measurement in JS and nothing to re-tune per
+ * breakpoint.
+ */
+.cap-hands {
+    --cap-plate-aspect: 1.776833; /* 1672 / 941 */
+    --cap-hand-w: calc(var(--cap-hand-scale) * 100cqw);
+    --cap-hand-h: calc(var(--cap-hand-w) / var(--cap-plate-aspect));
+
+    --cap-hand-scale: 1.06;
+    /* Vertical seat of the contact point. Above centre: the composition wants
+       air beneath the hands more than above them, and it keeps the point clear
+       of the fixed header. */
+    --cap-contact-fy: 0.47;
+    /* The gap the two tips stop at. Michelangelo's distance — they reach, they
+       do not clasp — and it is the room the signal point occupies. */
+    --cap-gap: clamp(0.75rem, 1.5cqw, 1.5rem);
+
+    --cap-contact-y: calc(var(--cap-contact-fy) * 100cqh);
+}
+
+/**
+ * NOTE — `max-width: none` is load-bearing.
+ *
+ * Tailwind's preflight applies `img { max-width: 100% }` globally, and this
+ * plate is deliberately 106% of its container. Without the override the browser
+ * clamps the width to 100%, which changes --cap-hand-w's effective value and
+ * therefore moves the fingertip off the contact point — the one thing on this
+ * page that has to be exact. It fails silently and looks like a tuning problem.
+ */
+.cap-hand {
+    max-width: none;
+    position: absolute;
+    width: var(--cap-hand-w);
+    height: var(--cap-hand-h);
+    /* Both plates are a lit subject on a pure-black ground, and `screen` over
+       a black stage is exactly an alpha channel derived from luminance —
+       without the unpremultiply step that frays a soft rim light. It also lets
+       the two overlap for the whole approach, which they must: at contact they
+       cover most of the same 1200px of stage. */
+    mix-blend-mode: screen;
+}
+
+.cap-hand-human {
+    --cap-tip-x: 0.6262;
+    --cap-tip-y: 0.44208;
+    left: calc(50cqw - var(--cap-gap) / 2 - var(--cap-tip-x) * var(--cap-hand-w));
+    top: calc(var(--cap-contact-y) - var(--cap-tip-y) * var(--cap-hand-h));
+}
+
+.cap-hand-robot {
+    --cap-tip-x: 0.38218;
+    --cap-tip-y: 0.38523;
+    left: calc(50cqw + var(--cap-gap) / 2 - var(--cap-tip-x) * var(--cap-hand-w));
+    top: calc(var(--cap-contact-y) - var(--cap-tip-y) * var(--cap-hand-h));
+}
+
+/* The two words, seated on the same line as the contact point so the eye
+   reads HUMAN -> <- MACHINE as one sentence across the negative space. */
+/* Seated well above the contact line. On the line — where the arrows point —
+   they sat directly on top of the two hands, because both plates enter from
+   off-screen at exactly that height. Above them the frame is empty for the
+   whole approach, and the pair still reads as one annotation across the gap. */
+.cap-hands-label {
+    position: absolute;
+    top: calc(var(--cap-contact-y) - 17cqh);
+    transform: translateY(-50%);
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    color: #fff;
+    white-space: nowrap;
+}
+
+.cap-hands-label-human {
+    left: clamp(1.25rem, 4cqw, 4.5rem);
+}
+
+.cap-hands-label-machine {
+    right: clamp(1.25rem, 4cqw, 4.5rem);
+    flex-direction: row-reverse;
+}
+
+.cap-hands-arrow {
+    display: block;
+    width: clamp(1.5rem, 4cqw, 3.5rem);
+    height: 1px;
+    background: currentColor;
+    opacity: 0.5;
+}
+
+/* The reaction. A square, because this brand has no radius anywhere else and
+   a dot here would be the only round thing on the site. */
+.cap-contact-point {
+    position: absolute;
+    left: 50cqw;
+    top: var(--cap-contact-y);
+    width: 8px;
+    height: 8px;
+    margin: -4px 0 0 -4px;
+    background: var(--color-signal);
+    opacity: 0;
+}
+
+/* ==========================================================================
+   BEAT 3 — THE CIRCLE
+   The next world is already mounted underneath; this only decides how much of
+   it is showing. `clip-path: circle()` on a composited layer is handled at
+   composite time in Chromium, which is why the radius can be written on every
+   scroll frame without a repaint — measured against a scale-a-disc alternative
+   and kept because it is the one that stays spatially exact at every radius.
+   ========================================================================== */
+.cap-world {
+    position: absolute;
+    inset: 0;
+    z-index: 3;
+    clip-path: circle(0px at 50% 50%);
+    background: #05070a;
+}
+
+/* ==========================================================================
+   BEAT 4 — RAW -> REFINED
+   ========================================================================== */
+.cap-sneaker {
+    position: absolute;
+    inset: 0;
+    background: #05070a;
+}
+
+.cap-sneaker-stack {
+    position: absolute;
+    inset: 0;
+}
+
+.cap-video {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+/* The refined plate sits underneath and is uncovered, never faded in. Its
+   window is a transform-only element for exactly the same reason as the
+   opening lens — see RefineLens. */
+.cap-refined-holder {
+    position: absolute;
+    inset: 0;
+    /* Hidden until the pointer has actually been over the composition, so the
+       reveal is something the reader causes rather than something they find
+       already happening. */
+    opacity: 0;
+}
+
+.cap-refine-lens {
+    position: absolute;
+    left: 0;
+    top: 0;
+    pointer-events: none;
+    /**
+     * THE WINDOW SHAPE, and why the clip lives here rather than on the inner.
+     *
+     * The inner element is counter-ROTATED, so its own square edges do not line
+     * up with this box — clipping there put the corners of a tilted square
+     * inside the mask's reach and the window came out as a spinning octagon.
+     * Clipping on this element instead means the content is cut to THIS box,
+     * which is the box the mask is drawn in.
+     *
+     * `closest-side` sizes the gradient to half the box rather than to its
+     * diagonal, so the falloff reaches zero exactly at the inscribed circle and
+     * the four points where that circle meets the square are already
+     * transparent. What is left is a clean circle at every rotation.
+     */
+    overflow: hidden;
+    -webkit-mask-image: radial-gradient(circle closest-side at 50% 50%, #000 0%, #000 56%, rgba(0, 0, 0, 0.76) 74%, rgba(0, 0, 0, 0.24) 89%, transparent 100%);
+    mask-image: radial-gradient(circle closest-side at 50% 50%, #000 0%, #000 56%, rgba(0, 0, 0, 0.76) 74%, rgba(0, 0, 0, 0.24) 89%, transparent 100%);
+    -webkit-mask-repeat: no-repeat;
+    mask-repeat: no-repeat;
+}
+
+.cap-refine-inner {
+    position: absolute;
+    inset: 0;
+}
+
+.cap-refine-frame {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: var(--cap-stage-w, 100vw);
+    height: var(--cap-stage-h, 100svh);
+    transform-origin: 0 0;
+}
+
+/* Copy for the sneaker beat. Two words, one line, and nothing else — the
+   object is the argument. */
+.cap-sneaker-copy {
+    position: absolute;
+    left: clamp(1.25rem, 4vw, 4.5rem);
+    bottom: clamp(2.5rem, 7vh, 5rem);
+    z-index: 4;
+    pointer-events: none;
+}
+
+/**
+ * The word swap, sized to the LONGER of the two words.
+ *
+ * A one-cell grid rather than the obvious `position: absolute` for the second
+ * word: absolutely positioning it takes it out of flow, so the mask sized
+ * itself to "RAW." and clipped "REFINED." to "REFII". Stacking both in the same
+ * grid cell keeps them exactly on top of each other AND lets the container take
+ * the width of the wider one, so the mask fits whichever word is showing.
+ */
+.cap-word-swap {
+    position: relative;
+    display: grid;
+    justify-items: start;
+    overflow: hidden;
+    padding-block: 0.06em;
+    margin-block: -0.06em;
+}
+
+.cap-word-swap > span {
+    grid-area: 1 / 1;
+    display: block;
+    font-size: clamp(2.5rem, 7vw, 6rem);
+    white-space: nowrap;
+}
+
+.cap-word-refined {
+    color: var(--color-signal);
+}
+
+.cap-sneaker-note {
+    margin-top: clamp(0.75rem, 1.6vh, 1.25rem);
+    white-space: nowrap;
+    color: rgba(255, 255, 255, 0.62);
+    opacity: 0;
+}
+
+/* ==========================================================================
+   BEAT 5 — THE STATEMENT, then the aircraft
+   ========================================================================== */
+/**
+ * NOTE — no `pointer-events: none` here, deliberately.
+ *
+ * The fixed header decides whether it is light or dark by hit-testing what is
+ * painted behind it (`elementsFromPoint` -> `closest("[data-zone]")`), and
+ * `elementsFromPoint` skips anything that is not hit-testable. With
+ * pointer-events off, this black panel was invisible to that test and the
+ * header read the near-white aircraft world underneath instead — a pale bar on
+ * a black statement. Nothing here is interactive, so being hit-testable costs
+ * nothing and is what makes the header correct.
+ */
+.cap-statement {
+    position: absolute;
+    inset: 0;
+    z-index: 4;
+    display: flex;
+    align-items: center;
+    background: #05070a;
+}
+
+.cap-statement-inner {
+    width: 100%;
+    padding-inline: clamp(1.25rem, 4vw, 4.5rem);
+    max-width: 108rem;
+    margin-inline: auto;
+}
+
+.cap-statement h2 {
+    margin: 0;
+    font-size: clamp(2.25rem, 7.4vw, 7rem);
+    color: #fff;
+    /* The display cut runs at -0.05em, which is the art direction and stays.
+       On one long single line at this size it closes the word gaps further
+       than it does on the site's stacked statements, so the space — and only
+       the space — is opened back up. Letterforms are untouched. */
+    word-spacing: 0.08em;
+}
+
+.cap-statement em {
+    font-style: normal;
+    color: var(--color-signal);
+}
+
+.cap-air {
+    position: absolute;
+    inset: 0;
+    background: #eef0f1;
+}
+
+.cap-air-poster {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: opacity 240ms linear;
+}
+
+.cap-air-poster[data-cleared] {
+    opacity: 0;
+}
+
+/* The aircraft footage runs on a near-white studio ground, so its overlay
+   type inverts to ink. This is the arc of the whole page closing: paper, then
+   structure, then paper again. */
+.cap-air-copy {
+    position: absolute;
+    left: clamp(1.25rem, 4vw, 4.5rem);
+    bottom: clamp(2.5rem, 7vh, 5rem);
+    z-index: 3;
+    color: var(--color-ink);
+    pointer-events: none;
+}
+
+.cap-air-chapter {
+    display: flex;
+    align-items: baseline;
+    gap: 0.9rem;
+}
+
+.cap-air-chapter b {
+    font-weight: inherit;
+    color: var(--color-signal-ink);
+}
+
+.cap-air-rail {
+    position: absolute;
+    left: clamp(1.25rem, 4vw, 4.5rem);
+    right: clamp(1.25rem, 4vw, 4.5rem);
+    bottom: clamp(1.5rem, 3.5vh, 2.5rem);
+    height: 1px;
+    background: rgba(0, 0, 0, 0.16);
+    z-index: 3;
+}
+
+.cap-air-rail i {
+    display: block;
+    height: 100%;
+    background: var(--color-signal);
+    transform: scaleX(0);
+    transform-origin: left center;
+}
+
+/* ==========================================================================
+   THE PREPARE STATE
+   Real progress only — this reports bytes and readyState, never a timer
+   pretending to be one. It is allowed to be brief, and usually is.
+   ========================================================================== */
+.cap-prep {
+    position: fixed;
+    inset: 0;
+    z-index: 80;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    background: var(--color-paper);
+    transition: opacity 420ms var(--ease-out-expo);
+}
+
+.cap-prep[data-done] {
+    opacity: 0;
+    pointer-events: none;
+}
+
+.cap-prep-inner {
+    width: 100%;
+    padding-inline: clamp(1.25rem, 4vw, 4.5rem);
+    max-width: 108rem;
+    margin-inline: auto;
+}
+
+.cap-prep-word {
+    font-size: clamp(2rem, 9vw, 7rem);
+    color: var(--color-ink);
+}
+
+.cap-prep-rail {
+    display: block;
+    margin-top: clamp(1rem, 2vh, 1.75rem);
+    height: 2px;
+    background: var(--color-hair);
+    overflow: hidden;
+}
+
+.cap-prep-fill {
+    display: block;
+    height: 100%;
+    background: var(--color-signal);
+    transform: scaleX(0);
+    transform-origin: left center;
+    transition: transform 200ms linear;
+}
+
+html.cap-locked,
+html.cap-locked body {
+    overflow: hidden;
+    height: 100%;
+}
+
+/* ==========================================================================
+   THE CLOSE
+   ========================================================================== */
+.cap-outro {
+    position: relative;
+    background: var(--color-paper);
+    color: var(--color-ink);
+}
+
+/* ==========================================================================
+   REDUCED MOTION
+   Not a stripped page — a still one. Every beat resolves to the frame it was
+   always heading for: the hands already touching, the sneaker already refined,
+   the aircraft already open. Nothing is hidden and nothing is pinned.
+   ========================================================================== */
+@media (prefers-reduced-motion: reduce) {
+    /* Nothing is pinned and nothing has a scroll distance: each act collapses
+       to its own height and the beats become a short stack of stills. The page
+       goes from about 14 viewports to about 6. */
+    .cap-act {
+        height: auto;
+    }
+
+    /**
+     * NARRATIVE ORDER, not paint order.
+     *
+     * While the stage is pinned, the beats are stacked layers and the source
+     * order is a z-order: the opening is written LAST so it paints on top of
+     * the two beats it hands over to. Collapsed into a vertical stack that
+     * ordering reverses the story — the reader arrives at the hands, then the
+     * sneaker, and meets the word CAPABILITIES at the bottom.
+     *
+     * Flex `order` restores the sequence without touching the markup, so the
+     * pinned version keeps the stacking it needs and the still version reads
+     * top to bottom in the order the piece was written.
+     */
+    .cap-stage {
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        height: auto;
+        min-height: 100svh;
+        overflow: hidden;
+    }
+
+    .cap-open { order: 1; }
+    .cap-hands { order: 2; }
+    .cap-world { order: 3; }
+
+    /* Act two carries both of its beats inside one layer. Targeted by name
+       rather than by position: the acts are not the last sections on the page,
+       so `:last-of-type` selects the outro. */
+    .cap-layer-air {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .cap-statement { order: 1; }
+    .cap-air { order: 2; }
+
+    .cap-layer,
+    .cap-hands,
+    .cap-world,
+    .cap-sneaker,
+    .cap-sneaker-stack,
+    .cap-statement,
+    .cap-air {
+        position: relative;
+        inset: auto;
+        opacity: 1;
+        visibility: visible;
+    }
+
+    .cap-open,
+    .cap-hands,
+    .cap-world,
+    .cap-air {
+        min-height: 100svh;
+    }
+
+    .cap-statement {
+        min-height: 52svh;
+        z-index: auto;
+    }
+
+    /* The aperture is already fully open. */
+    .cap-world {
+        clip-path: none;
+    }
+
+    .cap-hand {
+        transform: none !important;
+    }
+
+    /* Anything that only exists to be moved by a pointer. A trail is
+       nothing but motion, so unlike the other beats there is no gentler still
+       version of it to keep. */
+    .cap-lens,
+    .cap-fringe,
+    .cap-open-hint,
+    .cap-trail {
+        display: none;
+    }
+
+    .cap-hands-label,
+    .cap-contact-point,
+    .cap-sneaker-note {
+        opacity: 1;
+    }
+
+    /**
+     * THE SNEAKER, RESOLVED.
+     *
+     * The interaction's whole argument is RAW -> REFINED, so the still version
+     * shows the answer rather than the question: the raw plate is dropped and
+     * the refined one is promoted out of the lens to fill the frame. The lens
+     * chrome — the mask, the counter-transform, the rim — is all undone here
+     * rather than merely hidden, because the element carrying it is now the
+     * one holding the picture.
+     */
+    .cap-sneaker-stack > .cap-video {
+        display: none;
+    }
+
+    .cap-refined-holder {
+        position: absolute;
+        inset: 0;
+        opacity: 1;
+    }
+
+    .cap-refine-lens {
+        position: absolute;
+        inset: 0;
+        width: 100% !important;
+        height: 100% !important;
+        transform: none !important;
+        -webkit-mask-image: none;
+        mask-image: none;
+    }
+
+    .cap-refine-inner,
+    .cap-refine-frame {
+        position: absolute;
+        inset: 0;
+        width: 100% !important;
+        height: 100% !important;
+        transform: none !important;
+    }
+
+    /* The word swap resolves to its second half. */
+    .cap-word-swap > span:first-child {
+        visibility: hidden;
+    }
+
+    .cap-word-refined {
+        transform: none !important;
+    }
+
+    .cap-prep {
+        display: none;
+    }
+}

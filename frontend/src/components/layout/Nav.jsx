@@ -10,8 +10,9 @@ export const NAV_ITEMS = [
   { index: "01", label: "Home", to: "/" },
   { index: "02", label: "About", to: "/about" },
   { index: "03", label: "Services", to: "/services" },
-  { index: "04", label: "Why Us", to: "/why-us" },
-  { index: "05", label: "Contact", to: "/contact" },
+  { index: "04", label: "Capabilities", to: "/capabilities" },
+  { index: "05", label: "Why Us", to: "/why-us" },
+  { index: "06", label: "Contact", to: "/contact" },
 ];
 
 /* -------------------------------------------------------------------------- */

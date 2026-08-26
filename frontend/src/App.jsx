@@ -23,6 +23,11 @@ const Services = lazy(() => import("@/pages/Services"));
 const WhyUs = lazy(() => import("@/pages/WhyUs"));
 const Contact = lazy(() => import("@/pages/Contact"));
 const Lab = lazy(() => import("@/pages/Lab"));
+// Split for the usual reason and for one specific to it: the route chunk
+// carries only the device gate and the restricted screen, and the heavy
+// experience is a second dynamic import inside it. A phone that opens
+// /capabilities therefore downloads a few kilobytes and stops.
+const Capabilities = lazy(() => import("@/pages/Capabilities"));
 const NotFound = lazy(() => import("@/pages/NotFound"));
 
 /**
@@ -50,6 +55,7 @@ function warmRoutes() {
     import("@/pages/Services").catch(() => {});
     import("@/pages/WhyUs").catch(() => {});
     import("@/pages/Contact").catch(() => {});
+    import("@/pages/Capabilities").catch(() => {});
   };
 
   if (typeof window.requestIdleCallback === "function") {
@@ -166,6 +172,7 @@ export default function App() {
             <Route path="/why-us" element={<WhyUs />} />
             <Route path="/contact" element={<Contact />} />
             <Route path="/lab" element={<Lab />} />
+            <Route path="/capabilities" element={<Capabilities />} />
             <Route path="*" element={<NotFound />} />
           </Route>
 
