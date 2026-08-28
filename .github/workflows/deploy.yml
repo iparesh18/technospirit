@@ -1,0 +1,60 @@
+name: Deploy TechnoSpirit
+
+on:
+  push:
+    branches:
+      - main
+
+concurrency:
+  group: technospirit-production
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Deploy to VPS
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+          VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
+
+        run: |
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+
+          echo "$VPS_SSH_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+
+          ssh-keyscan -H "$VPS_HOST" >> ~/.ssh/known_hosts
+
+          ssh -i ~/.ssh/deploy_key "$VPS_USER@$VPS_HOST" << 'EOF'
+            set -e
+
+            echo "================================="
+            echo "Deploying TechnoSpirit"
+            echo "================================="
+
+            cd /var/www/technospirit/technospirit
+
+            echo "Pulling latest code..."
+            git fetch origin
+            git reset --hard origin/main
+
+            echo "Installing backend dependencies..."
+            cd backend
+            npm ci --omit=dev
+
+            echo "Restarting backend..."
+            pm2 restart technospirit-api
+
+            echo "Installing frontend dependencies..."
+            cd ../frontend
+            npm ci
+
+            echo "Building frontend..."
+            npm run build
+
+            echo "Deployment complete."
+          EOF
