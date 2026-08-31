@@ -1,0 +1,649 @@
+/* ==========================================================================
+   BOOK A CALL — the popup, and only the popup.
+
+   Loaded by components/booking/BookCallModal.jsx, which is a dynamic import
+   behind the CTA. Nothing in this file selects anything on the Contact page:
+   every rule is under `.ts-bk-*`, so the page it opens over cannot be reached
+   from here even by accident.
+
+   It reuses the site's existing form machinery rather than restating it —
+   `.ts-field*`, `.ts-cta*`, `.ts-form-error` and `.ts-honeypot` all come from
+   index.css and behave inside this panel exactly as they do on the page. What
+   is new here is the panel itself and the calendar.
+
+   All motion is CSS keyframes on a `data-state` attribute. That is motion rule
+   5 on this project: a GSAP timeline keyed on an `open` prop cannot win the
+   race against a portal's own mount, and this project has already paid for
+   that lesson once in the mobile menu.
+   ========================================================================== */
+
+.ts-bk-root {
+    position: fixed;
+    inset: 0;
+    /* Above the nav (80), the mobile menu (95) and the chat panel (95);
+       below the route wipe (110) and the cursor follower (120), both of which
+       should still draw over a modal. */
+    z-index: 100;
+    display: grid;
+    /*
+     * `minmax(0, 1fr)`, not the implicit `auto`.
+     *
+     * An auto track sizes to its item's max-content, and the day rail inside
+     * the panel is a 17-chip flex row whose max-content is ~1360px. With an
+     * auto track the panel's own `width: 100%` then resolved against THAT, and
+     * the sheet rendered 1361px wide inside a 390px phone. The 0 floor is the
+     * whole fix: it lets the track be smaller than its contents, so the rail
+     * scrolls (which is what its overflow-x is for) instead of pushing.
+     */
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr);
+    place-items: center;
+    padding: clamp(1rem, 3vw, 2.5rem);
+}
+
+.ts-bk-scrim {
+    position: absolute;
+    inset: 0;
+    display: block;
+    width: 100%;
+    height: 100%;
+    border: 0;
+    padding: 0;
+    background: rgba(0, 0, 0, 0.74);
+    cursor: pointer;
+}
+
+.ts-bk-panel {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    width: min(46rem, 100%);
+    max-width: 100%;
+    max-height: min(88dvh, 54rem);
+    /* Both floors are load-bearing: without them the panel is sized by its
+       widest and tallest descendant instead of by the viewport. */
+    min-width: 0;
+    min-height: 0;
+    background: var(--color-paper);
+    border: 1px solid var(--color-ink);
+    /* The hard top edge the emails and the site's section rules both use. It
+       is the one piece of structure that says "TechnoSpirit" before a word is
+       read. */
+    border-top: 4px solid var(--color-ink);
+}
+
+/* — head ————————————————————————————————————————— */
+
+.ts-bk-head {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 1rem clamp(1.15rem, 3vw, 2rem);
+    border-bottom: 1px solid var(--color-ink);
+}
+
+.ts-bk-title {
+    color: var(--color-ink);
+}
+
+.ts-bk-close {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 2rem;
+    height: 2rem;
+    flex: 0 0 auto;
+    background: transparent;
+    border: 1px solid var(--color-hair);
+    color: var(--color-ink);
+    cursor: pointer;
+    transition:
+        border-color 200ms var(--ease-out-expo),
+        background-color 200ms var(--ease-out-expo),
+        color 200ms var(--ease-out-expo);
+}
+.ts-bk-close:hover {
+    border-color: var(--color-ink);
+    background: var(--color-ink);
+    color: var(--color-paper);
+}
+
+/* — the scrolling body ————————————————————————————— */
+
+.ts-bk-form {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    flex: 1 1 auto;
+}
+
+.ts-bk-scroll {
+    flex: 1 1 auto;
+    min-width: 0;
+    min-height: 0;
+    overflow-y: auto;
+    /* Reaching the end of this list must not start scrolling the page behind
+       it — the body lock covers the wheel, this covers touch. */
+    overscroll-behavior: contain;
+    padding: 0 clamp(1.15rem, 3vw, 2rem);
+}
+
+.ts-bk-sect {
+    padding: clamp(1.5rem, 3vw, 2rem) 0;
+    border-bottom: 1px solid var(--color-hair);
+}
+.ts-bk-sect:last-of-type {
+    border-bottom: 0;
+}
+
+.ts-bk-sect-head {
+    display: flex;
+    align-items: baseline;
+    gap: 0.85rem;
+    padding-bottom: 0.25rem;
+}
+.ts-bk-sect-idx {
+    color: var(--color-signal-ink);
+}
+.ts-bk-sect-name {
+    color: var(--color-ink);
+}
+.ts-bk-sect-msg {
+    margin-left: auto;
+    color: var(--color-ash-dim);
+    text-align: right;
+}
+
+.ts-bk-stack {
+    margin-top: clamp(1.25rem, 2.4vw, 1.75rem);
+    display: flex;
+    flex-direction: column;
+    gap: clamp(1.35rem, 2.4vw, 1.9rem);
+}
+
+/* — phone: two controls, one answer ——————————————————— */
+
+.ts-bk-phone {
+    display: flex;
+    align-items: stretch;
+    gap: 0.85rem;
+}
+
+.ts-bk-dial {
+    flex: 0 0 auto;
+    width: auto;
+    max-width: 7.5rem;
+    appearance: none;
+    background: transparent;
+    border: 0;
+    border-right: 1px solid var(--color-hair);
+    padding: 0 1.35rem 0.75rem 0;
+    font-family: var(--font-mono);
+    font-size: 0.9rem;
+    letter-spacing: 0.04em;
+    color: var(--color-ink);
+    cursor: pointer;
+    outline-offset: 6px;
+}
+
+.ts-bk-phone-input {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+/* The line under the number, stated in the same mono register as every other
+   piece of microcopy on the site. */
+.ts-bk-note {
+    margin-top: 0.7rem;
+    color: var(--color-ash-dim);
+    letter-spacing: 0.14em;
+    line-height: 1.5;
+}
+
+/* — country select ————————————————————————————————— */
+
+.ts-bk-select {
+    appearance: none;
+    cursor: pointer;
+    /* Room for the caret drawn by the box below. */
+    padding-right: 1.75rem;
+}
+
+/*
+ * The caret: a hairline chevron, no OS widget, no chrome.
+ *
+ * Painted as the select's own background rather than as a pseudo-element on
+ * the row. That was the first attempt and it needed a hard-coded left offset,
+ * which is a number that is only ever right at one viewport — a select sizes
+ * itself to its widest option, so the dial control is 88px on desktop and 95px
+ * on a phone and the caret drifted off its edge. A background anchored to
+ * `right` cannot drift, whichever control it is on and whatever it is showing.
+ */
+.ts-bk-dial,
+.ts-bk-select {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='7'%3E%3Cpath d='M1 1.2l4 4 4-4' fill='none' stroke='%236b6b6b' stroke-width='1.1'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    /* Offset from the right edge of the padding box, and clear of the 0.75rem
+       bottom padding every field input carries. */
+    background-position: right 0.45rem top 0.5rem;
+    background-size: 10px 7px;
+}
+
+/* — the calendar ——————————————————————————————————— */
+
+.ts-bk-zone {
+    margin-top: 1.1rem;
+    color: var(--color-ash);
+    letter-spacing: 0.14em;
+    line-height: 1.6;
+    text-transform: none;
+}
+.ts-bk-zone strong {
+    color: var(--color-ink);
+    font-weight: 500;
+}
+
+.ts-bk-daylabel {
+    margin-top: 1.5rem;
+    margin-bottom: 0.7rem;
+    display: flex;
+    align-items: baseline;
+    gap: 0.75rem;
+    color: var(--color-ash-dim);
+}
+.ts-bk-daylabel-day {
+    font-family: var(--font-sans);
+    font-style: normal;
+    font-size: 0.8rem;
+    letter-spacing: -0.01em;
+    text-transform: none;
+    color: var(--color-ink);
+}
+
+.ts-bk-days {
+    display: flex;
+    gap: 0.5rem;
+    /* The rail is the one thing here wider than the panel. It must be allowed
+       to be narrower than its contents, or it sizes everything above it. */
+    min-width: 0;
+    max-width: 100%;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scroll-snap-type: x proximity;
+    padding-bottom: 0.5rem;
+    /* A thin rail rather than the OS scrollbar, which on Windows is 17px of
+       grey inside a 90px-tall strip. */
+    scrollbar-width: thin;
+}
+
+.ts-bk-day {
+    flex: 0 0 auto;
+    scroll-snap-align: start;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.15rem;
+    min-width: 4.4rem;
+    padding: 0.65rem 0.6rem 0.7rem;
+    background: transparent;
+    border: 1px solid var(--color-hair);
+    color: var(--color-ink);
+    cursor: pointer;
+    transition:
+        border-color 220ms var(--ease-out-expo),
+        background-color 220ms var(--ease-out-expo),
+        color 220ms var(--ease-out-expo);
+}
+.ts-bk-day:hover:not(:disabled) {
+    border-color: var(--color-ink);
+}
+.ts-bk-day.is-active {
+    background: var(--color-ink);
+    border-color: var(--color-ink);
+    color: var(--color-paper);
+}
+.ts-bk-day:disabled {
+    color: var(--color-ash-dim);
+    cursor: not-allowed;
+    /* Not opacity: a faded chip on white loses its border and stops reading as
+       a chip at all. Desaturating the text keeps the shape. */
+    border-style: dashed;
+}
+
+.ts-bk-day-wd,
+.ts-bk-day-mo {
+    font-family: var(--font-mono);
+    font-size: 0.6rem;
+    letter-spacing: 0.14em;
+    line-height: 1;
+    color: currentColor;
+    opacity: 0.65;
+}
+.ts-bk-day-no {
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-stretch: 88%;
+    font-size: 1.4rem;
+    line-height: 1.1;
+    letter-spacing: -0.03em;
+}
+
+.ts-bk-times {
+    display: grid;
+    min-width: 0;
+    grid-template-columns: repeat(auto-fill, minmax(6.1rem, 1fr));
+    gap: 0.5rem;
+}
+
+.ts-bk-time {
+    padding: 0.8rem 0.4rem;
+    background: transparent;
+    border: 1px solid var(--color-hair);
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    letter-spacing: 0.1em;
+    line-height: 1;
+    color: var(--color-ink);
+    cursor: pointer;
+    transition:
+        border-color 220ms var(--ease-out-expo),
+        background-color 220ms var(--ease-out-expo),
+        color 220ms var(--ease-out-expo);
+}
+.ts-bk-time:hover:not(:disabled) {
+    border-color: var(--color-ink);
+}
+/* The one red moment in the popup. Choosing the time is the decision the whole
+   panel exists for, so it gets the signal colour and nothing else does. */
+.ts-bk-time.is-active {
+    background: var(--color-signal);
+    border-color: var(--color-signal);
+    color: #ffffff;
+}
+.ts-bk-time:disabled {
+    color: var(--color-ash-dim);
+    border-style: dashed;
+    cursor: not-allowed;
+    text-decoration: line-through;
+}
+
+.ts-bk-state {
+    margin-top: 1.25rem;
+    font-family: var(--font-sans);
+    font-size: 0.95rem;
+    line-height: 1.55;
+    color: var(--color-ash);
+}
+.ts-bk-retry {
+    margin-top: 0.75rem;
+    display: inline-flex;
+    padding: 0.6rem 1rem;
+    background: transparent;
+    border: 1px solid var(--color-ink);
+    color: var(--color-ink);
+    cursor: pointer;
+    transition:
+        background-color 220ms var(--ease-out-expo),
+        color 220ms var(--ease-out-expo);
+}
+.ts-bk-retry:hover {
+    background: var(--color-ink);
+    color: var(--color-paper);
+}
+
+/* — foot ————————————————————————————————————————— */
+
+.ts-bk-foot {
+    flex: 0 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 0.9rem;
+    padding: 1.15rem clamp(1.15rem, 3vw, 2rem) clamp(1.15rem, 3vw, 1.6rem);
+    border-top: 1px solid var(--color-ink);
+    background: var(--color-paper);
+}
+.ts-bk-failure {
+    margin: 0;
+}
+/* `.ts-cta` is the contact form's submit slab, unchanged — same black panel,
+   same red fill wiping up from the baseline, same arrow. */
+.ts-bk-submit {
+    padding: 1.05rem 1.5rem;
+}
+
+/* — the confirmation ——————————————————————————————— */
+
+.ts-bk-done {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding: clamp(1.75rem, 4vw, 2.75rem) clamp(1.15rem, 3vw, 2rem)
+        clamp(1.5rem, 3vw, 2rem);
+}
+.ts-bk-done-tag {
+    color: var(--color-signal-ink);
+}
+.ts-bk-done-head {
+    margin-top: 1.1rem;
+    font-size: clamp(2.4rem, 7vw, 3.6rem);
+    color: var(--color-ink);
+}
+.ts-bk-done-lead {
+    margin-top: 1.35rem;
+    max-width: 26rem;
+    font-size: 1rem;
+    color: var(--color-ash);
+}
+
+.ts-bk-done-when {
+    margin-top: 1.75rem;
+    padding-top: 1.25rem;
+    border-top: 2px solid var(--color-ink);
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+}
+.ts-bk-done-date,
+.ts-bk-done-time {
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-stretch: 86%;
+    font-size: clamp(1.35rem, 4vw, 1.85rem);
+    line-height: 1.1;
+    letter-spacing: -0.03em;
+    color: var(--color-ink);
+}
+.ts-bk-done-zone {
+    margin-left: 0.5rem;
+    font-family: var(--font-mono);
+    font-style: normal;
+    font-size: 0.72rem;
+    letter-spacing: 0.14em;
+    color: var(--color-signal-ink);
+}
+
+.ts-bk-done-rows {
+    margin-top: 1.75rem;
+    border-top: 1px solid var(--color-hair);
+}
+.ts-bk-done-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.4rem 1.25rem;
+    padding: 0.85rem 0;
+    border-bottom: 1px solid var(--color-hair);
+}
+.ts-bk-done-row dt {
+    flex: 0 0 auto;
+    min-width: 11rem;
+    color: var(--color-ash-dim);
+}
+.ts-bk-done-row dd {
+    flex: 1 1 12rem;
+    min-width: 0;
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    letter-spacing: 0.01em;
+    color: var(--color-ink);
+    overflow-wrap: anywhere;
+}
+
+.ts-bk-done .ts-bk-submit {
+    margin-top: 2rem;
+}
+
+/* — motion ————————————————————————————————————————
+   Enter is unhurried; exit is faster, because a system responding should
+   always beat a system presenting. Neither ever animates from scale(0): the
+   panel has a shape before it arrives.
+   ------------------------------------------------------------------------ */
+
+.ts-bk-root[data-state="open"] .ts-bk-scrim {
+    animation: ts-bk-scrim-in 240ms ease-out both;
+}
+.ts-bk-root[data-state="closing"] .ts-bk-scrim {
+    animation: ts-bk-scrim-out 190ms ease-in both;
+}
+.ts-bk-root[data-state="open"] .ts-bk-panel {
+    animation: ts-bk-panel-in 360ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.ts-bk-root[data-state="closing"] .ts-bk-panel {
+    animation: ts-bk-panel-out 190ms cubic-bezier(0.4, 0, 1, 1) both;
+}
+
+@keyframes ts-bk-scrim-in {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+}
+@keyframes ts-bk-scrim-out {
+    from { opacity: 1; }
+    to   { opacity: 0; }
+}
+@keyframes ts-bk-panel-in {
+    from {
+        opacity: 0;
+        transform: translate3d(0, 20px, 0) scale(0.985);
+    }
+    to {
+        opacity: 1;
+        transform: translate3d(0, 0, 0) scale(1);
+    }
+}
+@keyframes ts-bk-panel-out {
+    from {
+        opacity: 1;
+        transform: translate3d(0, 0, 0) scale(1);
+    }
+    to {
+        opacity: 0;
+        transform: translate3d(0, 10px, 0) scale(0.99);
+    }
+}
+
+/* — mobile ————————————————————————————————————————
+   A sheet anchored to the bottom edge, not a shrunken dialog. The page stays
+   visible in the strip above it, which is what keeps this reading as something
+   opened OVER /contact rather than as a navigation.
+   ------------------------------------------------------------------------ */
+
+@media (max-width: 640px) {
+    .ts-bk-root {
+        padding: 0;
+        place-items: end stretch;
+    }
+
+    .ts-bk-panel {
+        width: 100%;
+        /* dvh, not vh: vh is measured with the browser chrome collapsed, so
+           the foot would sit under the URL bar. dvh tracks the live viewport,
+           which is also what keeps the submit button reachable when the
+           software keyboard opens. */
+        max-height: calc(100dvh - 2.75rem);
+        height: calc(100dvh - 2.75rem);
+        border-left: 0;
+        border-right: 0;
+        border-bottom: 0;
+    }
+
+    .ts-bk-root[data-state="open"] .ts-bk-panel {
+        animation: ts-bk-sheet-in 340ms cubic-bezier(0.16, 1, 0.3, 1) both;
+    }
+    .ts-bk-root[data-state="closing"] .ts-bk-panel {
+        animation: ts-bk-sheet-out 190ms cubic-bezier(0.4, 0, 1, 1) both;
+    }
+
+    @keyframes ts-bk-sheet-in {
+        from { transform: translate3d(0, 100%, 0); }
+        to   { transform: translate3d(0, 0, 0); }
+    }
+    @keyframes ts-bk-sheet-out {
+        from { transform: translate3d(0, 0, 0); }
+        to   { transform: translate3d(0, 100%, 0); }
+    }
+
+    .ts-bk-times {
+        grid-template-columns: repeat(auto-fill, minmax(5.5rem, 1fr));
+    }
+
+    /* 16px is the threshold below which iOS zooms the viewport on focus, and
+       a zoomed sheet cannot be scrolled back. */
+    .ts-bk-panel .ts-field-input,
+    .ts-bk-dial {
+        font-size: 16px;
+    }
+
+    .ts-bk-done-row dt {
+        min-width: 100%;
+    }
+}
+
+/* — reduced motion ————————————————————————————————
+   The panel still arrives; it simply stops travelling.
+   ------------------------------------------------------------------------ */
+
+@media (prefers-reduced-motion: reduce) {
+    .ts-bk-root[data-state="open"] .ts-bk-panel,
+    .ts-bk-root[data-state="open"] .ts-bk-scrim {
+        animation: ts-bk-scrim-in 160ms ease-out both;
+    }
+    .ts-bk-root[data-state="closing"] .ts-bk-panel,
+    .ts-bk-root[data-state="closing"] .ts-bk-scrim {
+        animation: ts-bk-scrim-out 140ms ease-out both;
+    }
+
+    .ts-bk-day,
+    .ts-bk-time,
+    .ts-bk-close,
+    .ts-bk-retry {
+        transition: none;
+    }
+}
+
+/* The visitor's own clock, shown only when it differs from the booking clock.
+   Quieter than the slot grid above it — it is a reassurance, not a control. */
+.ts-bk-local {
+    margin-top: 1rem;
+    padding-top: 0.85rem;
+    border-top: 1px solid var(--color-hair);
+    color: var(--color-ash);
+    letter-spacing: 0.14em;
+    line-height: 1.6;
+}
+.ts-bk-local strong {
+    color: var(--color-ink);
+    font-weight: 500;
+}
+
+/* Same idea on the confirmation: the ET line stays the headline, this sits
+   under it in the microcopy register rather than competing with it. */
+.ts-bk-done-local {
+    margin-top: 0.55rem;
+    color: var(--color-ash);
+    letter-spacing: 0.14em;
+    line-height: 1.5;
+}

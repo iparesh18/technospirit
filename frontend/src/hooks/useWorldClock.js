@@ -15,6 +15,25 @@ export const ZONES = [
   { code: "SYD", city: "Sydney", tz: "Australia/Sydney", lat: -33.86, lon: 151.2 },
 ];
 
+/**
+ * The zone's own abbreviation for this instant — `EST` or `EDT` for New York,
+ * depending on where `now` falls relative to the DST boundary. Reading it from
+ * Intl rather than storing a string on the zone is what makes the switch
+ * automatic: nothing here knows the changeover dates, so nothing here can drift
+ * when the US moves them. Zones without a lettered abbreviation (Kolkata) come
+ * back as a GMT offset, which is the correct answer for them.
+ */
+function abbreviate(tz, now) {
+  try {
+    const part = new Intl.DateTimeFormat("en-US", { timeZone: tz, timeZoneName: "short" })
+      .formatToParts(now)
+      .find((p) => p.type === "timeZoneName");
+    return part?.value ?? "";
+  } catch {
+    return "";
+  }
+}
+
 function format(tz, now) {
   try {
     return new Intl.DateTimeFormat("en-GB", {
@@ -36,7 +55,7 @@ function format(tz, now) {
 export default function useWorldClock() {
   const [times, setTimes] = useState(() => {
     const now = new Date();
-    return ZONES.map((z) => ({ ...z, time: format(z.tz, now) }));
+    return ZONES.map((z) => ({ ...z, time: format(z.tz, now), abbr: abbreviate(z.tz, now) }));
   });
 
   useEffect(() => {
@@ -45,7 +64,7 @@ export default function useWorldClock() {
 
     const tick = () => {
       const now = new Date();
-      setTimes(ZONES.map((z) => ({ ...z, time: format(z.tz, now) })));
+      setTimes(ZONES.map((z) => ({ ...z, time: format(z.tz, now), abbr: abbreviate(z.tz, now) })));
     };
 
     // align to the top of the next minute, then run every minute

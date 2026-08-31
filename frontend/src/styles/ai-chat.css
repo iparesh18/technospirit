@@ -1,0 +1,622 @@
+/* ==========================================================================
+   TECHNOSPIRIT AI — the assistant surface
+
+   Two different motion budgets live in this file, deliberately:
+
+   1. The LAUNCHER animates continuously, forever, on every page. All of it is
+      CSS on `transform` / `opacity` / `background-color`, so it runs off the
+      main thread and cannot steal frames from ScrollTrigger. There is no JS in
+      the loop at all: the orb is three spans (LivingBlob.jsx) and the ring's
+      rotation is a keyframe whose rate is nudged on hover via WAAPI.
+
+   2. The PANEL is overlay motion, which on this project is CSS keyframes and
+      never GSAP (motion rule 5: portal mount timing has bitten this codebase
+      before — see the mobile menu sheet).
+
+   Design language is the site's, unchanged: zero radius, hairlines, hard
+   rules, no shadows. The orb is the one curve on the site — a solid circle
+   that inverts with the section behind it, black on paper and white on ink,
+   with no gradient, glow or ornament anywhere in it.
+   ========================================================================== */
+
+/* — launcher ———————————————————————————————————————— */
+
+.ts-ai-launcher {
+    position: fixed;
+    right: clamp(1rem, 2.5vw, 1.75rem);
+    bottom: clamp(1rem, 2.5vw, 1.75rem);
+    /* Under the nav (z-80), over the page. They never overlap. */
+    z-index: 75;
+    display: grid;
+    place-items: center;
+    padding: 0;
+    border: 0;
+    background: none;
+    cursor: pointer;
+    /* The button now spans the ring, not the blob. Circular so the corners of
+       that larger box stay click-through — hit testing respects border-radius,
+       and an invisible 100px square in the corner would otherwise swallow
+       clicks meant for the page. */
+    border-radius: 50%;
+    /* Safe areas: on a notched phone in landscape the right inset is real, and
+       the bottom inset keeps the ring clear of the home indicator. */
+    margin-right: env(safe-area-inset-right, 0px);
+    margin-bottom: env(safe-area-inset-bottom, 0px);
+    -webkit-tap-highlight-color: transparent;
+    /* The follow-the-cursor offset is written here by JS. A transition rather
+       than a rAF lerp: pointermove retargets an in-flight transition, which
+       gives the damped, slightly-behind feel of a spring for no loop. */
+    transform: translate3d(var(--ts-ai-x, 0px), var(--ts-ai-y, 0px), 0);
+    transition: transform 420ms cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+/* Touch devices fire hover on tap; gate the pointer reaction. */
+@media (hover: hover) and (pointer: fine) {
+    /* The entire hover response. 1.03 rather than the 1.06 the old orb used:
+       on a flat circle a 6% jump reads as the object growing, where 3% reads
+       as it noticing. There is nothing else to change — no glow to brighten,
+       no lines to sharpen — and that is the point. */
+    .ts-ai-launcher:hover .ts-ai-blob-scale {
+        transform: scale(1.03);
+    }
+}
+
+.ts-ai-launcher:active .ts-ai-blob-scale {
+    transform: scale(0.97);
+}
+
+.ts-ai-launcher:focus-visible {
+    outline: 2px solid var(--color-signal);
+    outline-offset: 4px;
+}
+
+/* Ring and blob occupy one cell, so they share a centre and the ring can be
+   larger than the blob without displacing it. The blob is painted second and
+   therefore on top — the ring never crosses it, but stacking order makes that
+   structural rather than a matter of the radius being right. */
+.ts-ai-launcher > .ts-ai-ring,
+.ts-ai-launcher > .ts-ai-blob-scale {
+    grid-area: 1 / 1;
+}
+
+/* The scale layer is separate from the breathing layer so hover, press and
+   breathing compose instead of overwriting one another. */
+.ts-ai-blob-scale {
+    display: block;
+    transition: transform 220ms cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+.ts-ai-blob-breathe {
+    display: block;
+    transform-origin: center;
+    /*
+      Breathing.
+
+      Slower and much shallower than the old orb's 5.6s / 1.035: a solid
+      silhouette shows scale far more honestly than a soft gradient did, so the
+      same amplitude that read as "alive" there reads as "pulsing" here.
+
+      The keyframe is asymmetric on purpose — a rise to 1.014, a settle through
+      0.996, then back — because an even two-stop swell is a metronome, and a
+      breath is not evenly spaced. The undershoot is what keeps it organic
+      rather than a throb. At this amplitude the silhouette moves by well under
+      a pixel at 56px, which is the intended reading: you notice it is alive
+      without ever catching it moving.
+    */
+    animation: ts-ai-breathe 7s ease-in-out infinite;
+}
+
+@keyframes ts-ai-breathe {
+    0%   { transform: scale(1); }
+    35%  { transform: scale(1.014); }
+    70%  { transform: scale(0.996); }
+    100% { transform: scale(1); }
+}
+
+/*
+  The centre mark: a circular crop of /images/ai-logo.avif.
+
+  THE WRAPPER IS THE CIRCLE, NOT THE IMAGE.
+  border-radius alone is not enough here — the source is 736x981, so a wrapper
+  that inherited that shape would round the corners of a portrait rectangle and
+  still read as a portrait rectangle. The box is forced to 1:1 with an explicit
+  aspect-ratio (belt and braces alongside the equal width/height the component
+  sets), and the image is cropped to fill it. The silhouette is therefore a
+  perfect circle whatever the asset's proportions are, now or later.
+
+  No background, no border, no shadow, no gradient — the image is the visual.
+*/
+.ts-ai-orb {
+    display: block;
+    aspect-ratio: 1 / 1;
+    border-radius: 50%;
+    overflow: hidden;
+    /* The rounded clip is what makes the circle, and a transformed ancestor
+       (the breathing scale) can make a browser drop a plain overflow clip on a
+       composited layer. This pins it. */
+    isolation: isolate;
+}
+
+.ts-ai-orb img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    /*
+      cover, never contain: the source has no alpha and an opaque lavender
+      ground, so contain would letterbox a rectangle inside the circle. cover
+      fills it and crops only the empty ground above the dome and the
+      reflection below — nothing of the subject is lost, and nothing is
+      stretched, because cover preserves the aspect ratio by definition.
+    */
+    object-fit: cover;
+    /*
+      38%, not centre. The dome sits above the middle of a frame that also
+      carries its reflection, so centring the FRAME leaves the subject riding
+      high in the circle. This centres the SUBJECT instead — measured off the
+      asset, not guessed.
+    */
+    object-position: center 38%;
+    /* The image is decorative and lives inside a button. */
+    pointer-events: none;
+    user-select: none;
+}
+
+/* — the ring ————————————————————————————————————————
+   Site microcopy, bent into a circle: same mono face, same uppercase, same
+   tracking discipline as .ts-label. It is set in the launcher rather than in
+   CircularText.css because type is the caller's business — the component owns
+   the geometry, this owns the voice. */
+.ts-ai-ring {
+    font-family: var(--font-mono);
+    /* 10px is under .ts-label's 11px floor, but that floor is written for
+       microcopy read in a line; a ring is read a character at a time and the
+       tracking below opens it up further. Smaller than this and the mono
+       counters close up. */
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    /*
+      Brand red by default, on every ordinary ground. The one exception is
+      handled below, keyed on the data-launcher-theme attribute the launcher
+      writes from useLauncherTheme. The transition is what keeps a boundary
+      crossing reading as a fade rather than a swap.
+    */
+    /* The brand red, straight off the design token — not a new value. */
+    color: var(--color-signal);
+    /* Slightly stronger than the old near-black setting: #ff2d16 at 0.62 on
+       white was thin at 10px, and the red has to carry on its own now that it
+       no longer inverts to match the ground. */
+    opacity: 0.9;
+    transition:
+        color 240ms cubic-bezier(0.23, 1, 0.32, 1),
+        opacity 220ms ease;
+    /* Purely decorative and inside a button; it must never eat the click or
+       show a text caret. */
+    pointer-events: none;
+    user-select: none;
+}
+
+/*
+  Red everywhere, white on red.
+
+  The circular text is TechnoSpirit red on white, on black, on grey — on every
+  ordinary section. The single case where that fails is the site's one
+  full-bleed red moment (<FinalCta>), where red on red would vanish; there, and
+  only there, it goes white. This is no longer a light/dark rule: a black
+  section still gets red text.
+*/
+.ts-ai-launcher[data-launcher-theme="red"] .ts-ai-ring {
+    color: #ffffff;
+}
+
+@media (hover: hover) and (pointer: fine) {
+    .ts-ai-launcher:hover .ts-ai-ring {
+        opacity: 1;
+    }
+}
+
+/* — panel ——————————————————————————————————————————— */
+
+.ts-ai-panel-root {
+    position: fixed;
+    inset: 0;
+    z-index: 95;
+    /* The root is only a positioning context; it must not eat clicks on the
+       page behind it. The panel itself re-enables them. */
+    pointer-events: none;
+}
+
+/* Mobile only. On desktop the panel is a small object in the corner and a
+   scrim would be a modal claim it does not make. */
+.ts-ai-scrim {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.55);
+    opacity: 0;
+    pointer-events: none;
+}
+
+.ts-ai-panel {
+    position: absolute;
+    right: clamp(1rem, 2.5vw, 1.75rem);
+    bottom: clamp(1rem, 2.5vw, 1.75rem);
+    width: 400px;
+    /* Bounded by the viewport so a short laptop window never clips the input. */
+    height: min(600px, calc(100dvh - 7.5rem));
+    display: flex;
+    flex-direction: column;
+    background: #000;
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    pointer-events: auto;
+    /* Scales out of the launcher it came from, not out of its own middle. */
+    transform-origin: bottom right;
+}
+
+@media (max-width: 640px) {
+    .ts-ai-panel {
+        right: 0.75rem;
+        left: 0.75rem;
+        /* Clear of the iOS/Android browser chrome at the bottom. */
+        bottom: max(0.75rem, env(safe-area-inset-bottom));
+        width: auto;
+        /* dvh, not vh: vh is the tallest-chrome measurement, so with the URL
+           bar showing the panel would run under it. dvh tracks the live
+           viewport, which is also what keeps the input visible when the
+           software keyboard opens. */
+        height: min(560px, calc(100dvh - 5.5rem));
+    }
+    .ts-ai-scrim {
+        opacity: 1;
+        pointer-events: auto;
+        transition: opacity 220ms ease;
+    }
+    .ts-ai-panel-root[data-state="closing"] .ts-ai-scrim {
+        opacity: 0;
+    }
+}
+
+/* Enter: never from scale(0) — the panel already has a shape before it
+   arrives. Exit is faster than enter, because the system responding should
+   always beat the system presenting. */
+.ts-ai-panel-root[data-state="open"] .ts-ai-panel {
+    animation: ts-ai-panel-in 280ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.ts-ai-panel-root[data-state="closing"] .ts-ai-panel {
+    animation: ts-ai-panel-out 170ms cubic-bezier(0.4, 0, 1, 1) both;
+}
+
+@keyframes ts-ai-panel-in {
+    from {
+        opacity: 0;
+        transform: scale(0.94) translateY(10px);
+        /* Blur bridges the gap between the launcher and the panel so the two
+           read as one object changing rather than two swapping. Small, and
+           only for the duration of the transition. */
+        filter: blur(6px);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+        filter: blur(0);
+    }
+}
+
+@keyframes ts-ai-panel-out {
+    from { opacity: 1; transform: scale(1) translateY(0); filter: blur(0); }
+    to   { opacity: 0; transform: scale(0.96) translateY(6px); filter: blur(4px); }
+}
+
+/* The launcher recedes rather than disappearing — the panel is the same
+   entity, larger. */
+.ts-ai-launcher[data-hidden="true"] {
+    opacity: 0;
+    pointer-events: none;
+    transform: translate3d(var(--ts-ai-x, 0px), var(--ts-ai-y, 0px), 0) scale(0.7);
+    transition:
+        opacity 160ms ease-out,
+        transform 240ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* — panel interior ————————————————————————————————— */
+
+.ts-ai-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 0.875rem 1rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.16);
+    flex: 0 0 auto;
+}
+
+.ts-ai-close {
+    display: grid;
+    place-items: center;
+    width: 2rem;
+    height: 2rem;
+    color: rgba(255, 255, 255, 0.55);
+    background: none;
+    border: 1px solid transparent;
+    cursor: pointer;
+    transition:
+        color 180ms ease,
+        border-color 180ms ease,
+        transform 160ms cubic-bezier(0.23, 1, 0.32, 1);
+}
+.ts-ai-close:hover {
+    color: #fff;
+    border-color: rgba(255, 255, 255, 0.28);
+}
+.ts-ai-close:active { transform: scale(0.94); }
+.ts-ai-close:focus-visible {
+    outline: 2px solid var(--color-signal);
+    outline-offset: 2px;
+}
+
+.ts-ai-log {
+    flex: 1 1 auto;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding: 1.125rem 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.125rem;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+}
+.ts-ai-log::-webkit-scrollbar { width: 3px; }
+.ts-ai-log::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.2); }
+
+/* Editorial, not iMessage: the assistant is unboxed text, and only the
+   visitor's own words get a container — so the transcript reads as a document
+   with your side marked, rather than as two rows of speech bubbles. */
+.ts-ai-msg {
+    animation: ts-ai-msg-in 300ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes ts-ai-msg-in {
+    from { opacity: 0; transform: translateY(7px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+.ts-ai-msg--user {
+    align-self: flex-end;
+    max-width: 85%;
+    padding: 0.5rem 0.75rem;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    color: #fff;
+}
+
+.ts-ai-msg--ai {
+    align-self: flex-start;
+    max-width: 92%;
+    color: rgba(255, 255, 255, 0.88);
+}
+
+.ts-ai-msg--error {
+    align-self: flex-start;
+    max-width: 92%;
+    color: rgba(255, 255, 255, 0.7);
+    border-left: 2px solid var(--color-signal);
+    padding-left: 0.75rem;
+}
+
+/* — quick actions ——————————————————————————————————— */
+
+.ts-ai-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    animation: ts-ai-msg-in 320ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.ts-ai-chip {
+    padding: 0.4rem 0.7rem;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: rgba(255, 255, 255, 0.72);
+    background: none;
+    cursor: pointer;
+    transition:
+        color 180ms ease,
+        border-color 180ms ease,
+        transform 150ms cubic-bezier(0.23, 1, 0.32, 1);
+}
+.ts-ai-chip:hover {
+    color: #fff;
+    border-color: rgba(255, 255, 255, 0.45);
+}
+.ts-ai-chip:active { transform: scale(0.97); }
+.ts-ai-chip:focus-visible {
+    outline: 2px solid var(--color-signal);
+    outline-offset: 2px;
+}
+
+/* — thinking ————————————————————————————————————————— */
+
+.ts-ai-think {
+    display: flex;
+    align-items: center;
+    gap: 0.625rem;
+    align-self: flex-start;
+    animation: ts-ai-msg-in 240ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* Three energy points that reorganise rather than bounce — the same
+   vocabulary as the lines inside the launcher, at a smaller scale. */
+.ts-ai-think-dot {
+    width: 3px;
+    height: 3px;
+    background: var(--color-signal);
+    animation: ts-ai-think 1.5s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+.ts-ai-think-dot:nth-child(2) { animation-delay: 0.16s; }
+.ts-ai-think-dot:nth-child(3) { animation-delay: 0.32s; }
+
+@keyframes ts-ai-think {
+    0%, 100% { opacity: 0.25; transform: translateX(0) scaleY(1); }
+    35%      { opacity: 1;    transform: translateX(2px) scaleY(2.6); }
+    70%      { opacity: 0.45; transform: translateX(0) scaleY(1); }
+}
+
+/* — input ——————————————————————————————————————————— */
+
+.ts-ai-form {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: flex-end;
+    gap: 0.5rem;
+    padding: 0.75rem 0.75rem 0.75rem 1rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.16);
+}
+
+.ts-ai-input {
+    flex: 1 1 auto;
+    resize: none;
+    border: 0;
+    outline: none;
+    background: none;
+    color: #fff;
+    max-height: 5.5rem;
+    line-height: 1.45;
+    padding: 0.375rem 0;
+}
+.ts-ai-input::placeholder { color: rgba(255, 255, 255, 0.35); }
+.ts-ai-input:focus-visible { outline: none; }
+/* The form owns the focus ring, so focus reads as "the composer is active"
+   rather than outlining a borderless textarea. */
+.ts-ai-form:focus-within {
+    border-top-color: rgba(255, 255, 255, 0.4);
+}
+
+.ts-ai-send {
+    display: grid;
+    place-items: center;
+    width: 2.25rem;
+    height: 2.25rem;
+    flex: 0 0 auto;
+    border: 1px solid rgba(255, 255, 255, 0.22);
+    color: #fff;
+    background: none;
+    cursor: pointer;
+    transition:
+        background-color 180ms ease,
+        border-color 180ms ease,
+        color 180ms ease,
+        opacity 180ms ease,
+        transform 150ms cubic-bezier(0.23, 1, 0.32, 1);
+}
+.ts-ai-send:not(:disabled):hover {
+    background: var(--color-signal);
+    border-color: var(--color-signal);
+}
+.ts-ai-send:not(:disabled):active { transform: scale(0.94); }
+.ts-ai-send:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+}
+.ts-ai-send:focus-visible {
+    outline: 2px solid var(--color-signal);
+    outline-offset: 2px;
+}
+
+/* — reduced motion ——————————————————————————————————
+   Fewer and gentler, not zero: opacity still carries the state change so the
+   panel does not teleport, but nothing moves, breathes, spins or pulses. */
+@media (prefers-reduced-motion: reduce) {
+    .ts-ai-launcher,
+    .ts-ai-blob-scale,
+    .ts-ai-close,
+    .ts-ai-chip,
+    .ts-ai-send {
+        transition-property: opacity, color, background-color, border-color;
+    }
+
+    /* The orb stops breathing and simply is. Colour adaptation is a
+       transition, not motion, so it stays — losing it would leave a black orb
+       invisible on a black section, which is a legibility regression dressed
+       up as an accessibility win. */
+    .ts-ai-blob-breathe,
+    .ts-ai-think-dot {
+        animation: none;
+    }
+
+    /* The ring keeps its letters on the circumference and simply stops
+       turning — CircularText.css already removes the animation, and with no
+       Animation object to re-rate the hover speed-up disables itself. */
+    .ts-ai-ring {
+        transition-property: color, opacity;
+    }
+
+    .ts-ai-launcher[data-hidden="true"] {
+        transform: translate3d(0, 0, 0);
+    }
+
+    .ts-ai-think-dot { opacity: 0.6; }
+
+    .ts-ai-panel-root[data-state="open"] .ts-ai-panel {
+        animation: ts-ai-fade-in 180ms ease-out both;
+    }
+    .ts-ai-panel-root[data-state="closing"] .ts-ai-panel {
+        animation: ts-ai-fade-out 140ms ease-out both;
+    }
+    .ts-ai-msg,
+    .ts-ai-chips,
+    .ts-ai-think {
+        animation: ts-ai-fade-in 200ms ease-out both;
+    }
+
+    @keyframes ts-ai-fade-in {
+        from { opacity: 0; }
+        to   { opacity: 1; }
+    }
+    @keyframes ts-ai-fade-out {
+        from { opacity: 1; }
+        to   { opacity: 0; }
+    }
+}
+
+/* — the booking hand-off ————————————————————————————
+   Shown under an assistant turn when the visitor asked to be called. It is a
+   deep link to /contact#book-call, styled as the panel's one solid action so
+   it reads as an offer rather than as another sentence — white slab on the
+   panel's black, inverting to the signal red on hover like every other primary
+   action on the site.
+   ------------------------------------------------------------------------ */
+.ts-ai-book {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.75rem;
+    align-self: flex-start;
+    margin: 0.15rem 0 0.35rem;
+    padding: 0.7rem 0.95rem;
+    background: #ffffff;
+    color: #000000;
+    border: 1px solid #ffffff;
+    text-decoration: none;
+    transition:
+        background-color 260ms cubic-bezier(0.16, 1, 0.3, 1),
+        border-color 260ms cubic-bezier(0.16, 1, 0.3, 1),
+        color 260ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+.ts-ai-book:hover,
+.ts-ai-book:focus-visible {
+    background: var(--color-signal);
+    border-color: var(--color-signal);
+    color: #ffffff;
+}
+.ts-ai-book svg {
+    flex: 0 0 auto;
+    transition: transform 400ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+.ts-ai-book:hover svg,
+.ts-ai-book:focus-visible svg {
+    transform: translate3d(0.2rem, -0.2rem, 0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .ts-ai-book,
+    .ts-ai-book svg {
+        transition: none;
+    }
+}

@@ -64,6 +64,7 @@ npm run seed:reset        # delete every inquiry, then re-seed
 | `GET` | `/api/admin/inquiries` | ✔ | `?page&limit&status&search` |
 | `GET` | `/api/admin/inquiries/:id` | ✔ | full record |
 | `PATCH` | `/api/admin/inquiries/:id/status` | ✔ | `{ status }` |
+| `POST` | `/api/chat` | — | ask the assistant; `{ message, history? }` |
 
 `GET /api/admin/inquiries` is capped at `limit=50` and returns a 180-character
 message preview rather than the full body, so the response is bounded no matter
@@ -117,6 +118,52 @@ delivery were awaited before responding and a client retried.
 
 With `EMAIL_USER` / `EMAIL_APP_PASSWORD` blank the API still accepts and stores
 inquiries; it logs a warning and marks both as `skipped`.
+
+## The assistant
+
+`POST /api/chat` answers questions about TechnoSpirit from a fixed knowledge
+base. Set `AI_PROVIDER`, a key and a model in `.env` (see `.env.example`).
+With no key the endpoint answers 503 with the contact fallback and the rest of
+the site is unaffected — that is a supported state, not a broken one.
+
+Providers: **groq** (default, official `groq-sdk`) and **openrouter**. The
+default model is `openai/gpt-oss-20b` — chosen after checking Groq's list, not
+assumed: the `llama-3.x` models were deprecated on 17 June 2026 and gpt-oss is
+Groq's own migration target. `openai/gpt-oss-120b` is the swap if grounding
+needs more weight; change `GROQ_MODEL` and restart, nothing else.
+
+```
+services/ai/         one file per vendor. groq.js and openrouter.js are the
+                     ONLY files that import an SDK or know a vendor's shape.
+services/chat/       provider-agnostic: the system prompt, the knowledge base,
+                     history trimming, the length ceiling and the grounding
+                     rules. Written once, shared by every provider.
+knowledge/           technospirit.json — verified facts, scanned from the site.
+```
+
+Switching provider is `AI_PROVIDER=openrouter` plus a key; no prompt, route,
+knowledge or UI change. Contact details are injected from env at request time
+and are deliberately **not** in `technospirit.json`, which is committed.
+
+The knowledge file is the assistant's only source of fact. Anything not in it —
+pricing, timelines, clients, team size, location — it must refuse and hand over
+the contact number. When adding to it, add facts that exist on the site; if a
+claim is not on the site, it does not belong in the file.
+
+Guardrails that do not depend on the prompt: 1000-character input cap, 6 turns
+of history (rebuilt server-side, never trusted from the browser), a 12s timeout
+per attempt, a 300-token output ceiling, a 900-character response cap, and
+15 messages per 5 minutes per IP.
+
+Retry is exactly one attempt, and only for failures where a second try is a
+different roll of the dice — 408/409/429/5xx and network-level errors. A bad
+key, a bad model name or a malformed request fail identically every time, so
+retrying those would only double the latency and the quota spent reaching the
+same error. Timeouts are never retried: the visitor has already waited.
+
+`AI_FALLBACK_ENABLED` (default `false`) is the switch for automatic failover to
+the other provider. Off by design — silently spending a second vendor's credits
+is not a decision this code makes on an operator's behalf.
 
 ## Security
 

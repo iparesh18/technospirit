@@ -1,0 +1,46 @@
+/* CircularText — see CircularText.jsx for why this diverges from the React
+   Bits original. The registry stylesheet hard-coded a 200px white ring with
+   `cursor: pointer`; none of that belongs to the component, so colour, size and
+   type are the caller's business here and only the ring mechanics live below. */
+
+.circular-text {
+    position: relative;
+    display: block;
+    /* Colour is inherited so a caller can drive it from one property — which is
+       what lets the launcher cross a light/dark boundary with a transition
+       rather than a swap. */
+    color: inherit;
+    /* The rotation. A CSS animation rather than a JS one so it runs on the
+       compositor: this element spins for as long as the page is open, and it
+       must never be able to cost ScrollTrigger a frame. Speed changes go
+       through the Animation object's playbackRate (see the component), not
+       through re-declaring this duration. */
+    animation: ts-circular-spin var(--ts-ct-duration, 20s) linear infinite;
+    will-change: transform;
+}
+
+@keyframes ts-circular-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.circular-text > span {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    display: block;
+    line-height: 1;
+    /* The string carries its own spacing characters, and a collapsed space
+       would drop a slot out of the ring and skew every character after it. */
+    white-space: pre;
+}
+
+/* Reduced motion: the ring stays a ring, it just stops turning. Removing the
+   animation here is also what the component reads as "no animation to re-rate",
+   so the hover speed-up disables itself with no second check. */
+@media (prefers-reduced-motion: reduce) {
+    .circular-text {
+        animation: none;
+    }
+}

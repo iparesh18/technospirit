@@ -97,7 +97,7 @@ Desktop first load 340 KB (route chunk 3.14 KB + experience 21.5 KB JS + 8.1 KB 
 ## Known issues
 1. Entry chunk ~531 kB (>500 kB Rollup warning). Routes are lazy; GSAP + Router + React are the bulk.
 2. `/lab` still has the 6-second-GOP source and the 833 MB decode path (above). It is also absent from `NAV_ITEMS` — adding it makes six desktop items, so check 1024 first.
-3. `/api/auth/me` returns 502 whenever the backend is not running. **External: BHK widget SDK 1.0.0 also logs 502 ("missing/invalid publicKey or merchantId")** — injected script, not app code.
+3. `/api/auth/me` errors when the backend is unreachable (502 down, 401 anonymous) — but **only on `/dashboard/*`**: `<AuthProvider>` now sits inside `<AdminShell>`, so public routes make no API call at all. **External: BHK widget SDK 1.0.0 also logs 502 ("missing/invalid publicKey or merchantId")** — injected script, not app code.
 4. The reveal image introduces gold and blue into a black/white/red palette. A deliberate exception — it is only ever seen in ~300px fragments.
 5. The aircraft and both hand plates upscale at >=1600 viewports (1672px / 1280px natives). No larger masters exist.
 6. Rate-limit state is in-memory: resets on restart, per-process.
@@ -105,7 +105,7 @@ Desktop first load 340 KB (route chunk 3.14 KB + experience 21.5 KB JS + 8.1 KB 
 8. No password-change UI; `mustChangePassword` is recorded but nothing reads it.
 
 ## Lifecycle fixes (Aug 26)
-- **ImageTrail critical crash fixed:** route navigation crash ("Cannot read properties of null reading 'style'") was a race condition where event listeners and timeline callbacks fired after component unmount. Added `effectMounted` flag, guarded all DOM access and callbacks, cancelled RAF on cleanup, killed all GSAP timelines, reset state on unmount.
+- **ImageTrail critical crash fixed:** navigating away from `/capabilities` threw "Cannot read properties of null reading 'style'" out of React's unmount commit, which blanked the whole app (no header, empty `#root`) until a hard reload. Cause: the effect closed over the **ref-holder objects** in `plates.current`, whose `pos`/`card` React sets to null in the mutation phase — *before* effect cleanup runs. Fix: capture the **elements** at effect setup (`.map(p => ({ pos: p.pos, card: p.card }))`), so cleanup always completes and needs no null guards.
 - **Will-change leaked compositor layers (fixed):** removed permanent declarations from `.cap-open`, `.cap-hand`, `.cap-contact-point`, `.cap-world` CSS; HandsScene now manages dynamically via refs.
 - **Verification:** Playwright stress tests pass (route navigation, fast mouse sweep + immediate nav, repeated visits, re-entry cleanup). Phone gate working (no heavy assets on mobile). Build succeeds.
 

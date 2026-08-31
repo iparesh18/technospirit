@@ -186,9 +186,6 @@ export default function ImageTrail({ active, quietRef }) {
   /** [positioner, card] per plate, filled by the ref callbacks below. */
   const plates = useRef([]);
 
-  // Track component lifecycle to prevent stale callbacks after unmount
-  const mounted = useRef(false);
-
   // `quietRef` is an object literal from the caller's render, so it is held in
   // a ref for the same reason usePointerLens holds its callbacks: the effect
   // below must not rebuild on a render, because rebuilding it drops the
@@ -198,39 +195,45 @@ export default function ImageTrail({ active, quietRef }) {
     quiet.current = quietRef;
   });
 
-  // Mark as mounted on first render
-  useEffect(() => {
-    mounted.current = true;
-    return () => {
-      mounted.current = false;
-    };
-  }, []);
-
   useEffect(() => {
     const host = root.current;
-    const pool = plates.current.filter((p) => p && p.pos && p.card);
+
+    /**
+     * THE POOL IS CAPTURED AS ELEMENTS, NOT AS THE REF HOLDERS.
+     *
+     * `plates.current` holds one small object per plate whose `pos` and `card`
+     * properties are written by the JSX ref callbacks below. React sets those
+     * callbacks to `null` during the MUTATION phase of an unmount, which runs
+     * BEFORE this effect's cleanup. So an effect that closed over those holder
+     * objects would find both properties null by the time it tried to tidy up.
+     *
+     * That is not theoretical: it threw
+     * `TypeError: Cannot read properties of null (reading 'style')` out of the
+     * cleanup, and because the throw happened inside React's unmount commit it
+     * took the whole tree down with it — leaving a blank page and no header on
+     * every navigation AWAY from /capabilities.
+     *
+     * Copying the element references into objects this effect owns fixes it at
+     * the root. A DOM node stays a perfectly valid object after React forgets
+     * about it, so the cleanup below can always finish its work: no null
+     * checks, and — the part the null checks got wrong — no silently skipped
+     * teardown leaving `will-change` set on ten promoted layers.
+     *
+     * `alive` lives on these objects too, so the round-robin state is scoped to
+     * the run of the effect that owns it and can never leak into the next one.
+     */
+    const pool = plates.current
+      .filter((p) => p && p.pos && p.card)
+      .map((p) => ({ pos: p.pos, card: p.card, alive: false }));
     if (!host || pool.length === 0) return undefined;
 
-    // Mark as mounted for this effect run
-    const effectMounted = { current: true };
-
     const park = () => {
-      // Guard against stale callbacks accessing unmounted refs
       for (const p of pool) {
-        if (!p || !p.pos || !p.card) continue;
-
         gsap.killTweensOf([p.pos, p.card]);
-
-        // Check refs still exist before accessing
-        if (p.card && p.card.style) {
-          p.card.style.opacity = "0";
-        }
-        if (p.pos && p.pos.style) {
-          p.pos.style.willChange = "";
-        }
-        if (p.card && p.card.style) {
-          p.card.style.willChange = "";
-        }
+        p.alive = false;
+        p.card.style.opacity = "0";
+        p.pos.style.willChange = "";
+        p.card.style.willChange = "";
       }
     };
 
@@ -247,12 +250,6 @@ export default function ImageTrail({ active, quietRef }) {
     let quietBand = null;
 
     const measure = () => {
-      // Guard: measurement only valid if effect is still mounted
-      if (!effectMounted.current) return;
-
-      // Guard: refs must still exist
-      if (!host || !pool[0] || !pool[0].pos) return;
-
       const r = host.getBoundingClientRect();
       box = { left: r.left, top: r.top };
       // Every plate is the same box; one read answers for all ten.
@@ -276,7 +273,6 @@ export default function ImageTrail({ active, quietRef }) {
 
     let queued = 0;
     const invalidate = () => {
-      if (!effectMounted.current) return;
       cancelAnimationFrame(queued);
       queued = requestAnimationFrame(measure);
     };
@@ -296,9 +292,6 @@ export default function ImageTrail({ active, quietRef }) {
     let live = 0;
 
     const onMove = (e) => {
-      // Ignore moves if effect has been cleaned up or not mounted yet
-      if (!effectMounted.current) return;
-
       tx = e.clientX - box.left;
       ty = e.clientY - box.top;
       if (!seeded) {
@@ -314,12 +307,8 @@ export default function ImageTrail({ active, quietRef }) {
     };
 
     const spawn = (dx, dy) => {
-      if (!effectMounted.current) return;
-
       const p = pool[cursor];
       cursor = (cursor + 1) % pool.length;
-
-      if (!p || !p.pos || !p.card) return;
 
       // Reusing a plate that is still alive: kill its timeline, and take its
       // count back before the new one adds its own.
@@ -344,27 +333,16 @@ export default function ImageTrail({ active, quietRef }) {
       live += 1;
       zTop += 1;
 
-      // Guard style access
-      if (p.pos.style) {
-        p.pos.style.willChange = "transform";
-        p.pos.style.zIndex = String(zTop);
-      }
-      if (p.card.style) {
-        p.card.style.willChange = "transform, opacity, clip-path";
-      }
+      p.pos.style.willChange = "transform";
+      p.pos.style.zIndex = String(zTop);
+      p.card.style.willChange = "transform, opacity, clip-path";
 
       const tl = gsap.timeline({
         onComplete: () => {
-          // Guard: check if effect is still mounted and refs still exist
-          if (!effectMounted.current || !p || !p.pos || !p.card) return;
-
           p.alive = false;
           live -= 1;
-
-          // Guard style access
-          if (p.pos.style) p.pos.style.willChange = "";
-          if (p.card.style) p.card.style.willChange = "";
-
+          p.pos.style.willChange = "";
+          p.card.style.willChange = "";
           // The pool is walked round-robin, so z can be reset whenever the
           // stage is empty and never has to grow without bound.
           if (live === 0) zTop = 1;
@@ -436,34 +414,14 @@ export default function ImageTrail({ active, quietRef }) {
     gsap.ticker.add(tick);
 
     return () => {
-      // Mark effect as unmounting to prevent stale callbacks
-      effectMounted.current = false;
-
-      // Cancel all RAF calls
       cancelAnimationFrame(queued);
-
-      // Remove all event listeners (use original handler references)
       window.removeEventListener("pointermove", onMove);
       window.removeEventListener("resize", invalidate);
       window.removeEventListener("scroll", invalidate);
-
-      // Remove ticker callback
       gsap.ticker.remove(tick);
-
-      // Kill all active timelines on this pool
-      for (const p of pool) {
-        if (p && p.pos && p.card) {
-          gsap.killTweensOf([p.pos, p.card]);
-        }
-      }
-
-      // Park the pool: clear styles and reset state
+      // Kills every timeline on the pool and clears both promotions. The
+      // locals above die with the closure, so there is nothing else to reset.
       park();
-
-      // Reset state to prevent any residual values affecting re-entry
-      seeded = false;
-      energy = 0;
-      lastSpawn = -Infinity;
     };
   }, [active]);
 

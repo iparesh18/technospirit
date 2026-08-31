@@ -310,3 +310,424 @@ export function internalNotification({ name, email, purpose, message, createdAt,
     text,
   };
 }
+
+/* ------------------------------------------------------------------ */
+/*  3. Call booking — shared time formatting                           */
+/* ------------------------------------------------------------------ */
+
+/**
+ * One instant, rendered the way the person reading it experiences it.
+ *
+ * The booking is stored in UTC with the visitor's IANA zone beside it, so
+ * every human-readable string in both emails is produced here from those two
+ * values together. `zone` comes back as the platform's own abbreviation —
+ * "EDT" in New York, "GMT+5:30" in Kolkata — which is the honest label for
+ * zones that have no letters.
+ *
+ * An unusable zone (a browser sending something ICU does not know) falls back
+ * to UTC rather than throwing: a confirmation email that fails to render is a
+ * far worse outcome than one that says UTC.
+ */
+export function callStamp(scheduledAt, timeZone) {
+  const at = scheduledAt instanceof Date ? scheduledAt : new Date(scheduledAt);
+
+  const format = (options) => {
+    try {
+      return new Intl.DateTimeFormat("en-US", { timeZone: timeZone || "UTC", ...options }).format(at);
+    } catch {
+      return new Intl.DateTimeFormat("en-US", { timeZone: "UTC", ...options }).format(at);
+    }
+  };
+
+  const zonePart = (() => {
+    try {
+      return (
+        new Intl.DateTimeFormat("en-US", { timeZone: timeZone || "UTC", timeZoneName: "short" })
+          .formatToParts(at)
+          .find((part) => part.type === "timeZoneName")?.value ?? "UTC"
+      );
+    } catch {
+      return "UTC";
+    }
+  })();
+
+  return {
+    /** "Tuesday, September 8, 2026" */
+    date: format({ weekday: "long", month: "long", day: "numeric", year: "numeric" }),
+    /** "11:30 AM" */
+    time: format({ hour: "numeric", minute: "2-digit", hour12: true }),
+    /** "EDT" / "GMT+5:30" */
+    zone: zonePart,
+    /** "Asia/Kolkata" — the unambiguous machine form, printed for the team. */
+    timeZone: timeZone || "UTC",
+  };
+}
+
+/* ------------------------------------------------------------------ */
+/*  4. Call booking — customer confirmation                            */
+/* ------------------------------------------------------------------ */
+
+export function bookingConfirmation({
+  name,
+  phone,
+  scheduledAt,
+  timezone,
+  businessTimezone,
+  discussion,
+}) {
+  const firstName = String(name || "").trim().split(/\s+/)[0] || "there";
+
+  /**
+   * The booking clock leads, and it is TechnoSpirit's — the same Eastern Time
+   * the popup labelled every slot with. This email has to repeat the time the
+   * visitor actually pressed; leading with their own zone instead would state
+   * a different-looking number for the same instant and read as a mistake.
+   *
+   * Their local time follows underneath whenever it differs, so nobody has to
+   * do the arithmetic to know when the phone will ring.
+   */
+  const when = callStamp(scheduledAt, businessTimezone || timezone);
+  const local =
+    timezone && businessTimezone && timezone !== businessTimezone
+      ? callStamp(scheduledAt, timezone)
+      : null;
+
+  const body = `
+        <tr>
+          <td style="padding:44px 40px 0 40px;">
+            ${label("Confirmation / Call booked", SIGNAL)}
+          </td>
+        </tr>
+
+        <tr>
+          <td style="padding:18px 40px 0 40px;font-family:${SANS};font-size:38px;line-height:1.02;font-weight:800;letter-spacing:-0.03em;color:${INK};">
+            YOU&rsquo;RE<br />BOOKED.
+          </td>
+        </tr>
+
+        <tr>
+          <td style="padding:28px 40px 0 40px;">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+              <tr><td style="background:${SIGNAL};height:3px;line-height:3px;font-size:0;width:64px;">&nbsp;</td></tr>
+            </table>
+          </td>
+        </tr>
+
+        <tr>
+          <td style="padding:26px 40px 0 40px;font-family:${SANS};font-size:16px;line-height:1.65;color:${INK};">
+            Hi ${escapeHtml(firstName)},
+          </td>
+        </tr>
+
+        <tr>
+          <td style="padding:14px 40px 0 40px;font-family:${SANS};font-size:16px;line-height:1.65;color:${ASH};">
+            Your call with TechnoSpirit has been booked successfully.
+          </td>
+        </tr>
+
+        <!-- The three facts the reader actually opened this to check. Large,
+             on their own rule, above everything else. -->
+        <tr>
+          <td style="padding:32px 40px 0 40px;">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-top:2px solid ${INK};">
+              <tr><td style="padding:18px 0 0 0;">${label("Call details")}</td></tr>
+              <tr>
+                <td style="padding:14px 0 0 0;font-family:${SANS};font-size:22px;line-height:1.25;font-weight:800;letter-spacing:-0.02em;color:${INK};">
+                  ${escapeHtml(when.date)}
+                </td>
+              </tr>
+              <tr>
+                <td style="padding:6px 0 0 0;font-family:${SANS};font-size:22px;line-height:1.25;font-weight:800;letter-spacing:-0.02em;color:${INK};">
+                  ${escapeHtml(when.time)} <span style="color:${SIGNAL};">${escapeHtml(when.zone)}</span>
+                </td>
+              </tr>
+${
+  local
+    ? `              <tr>
+                <td style="padding:10px 0 0 0;font-family:${SANS};font-size:15px;line-height:1.5;color:${ASH};">
+                  ${escapeHtml(local.date)} &middot; ${escapeHtml(local.time)} ${escapeHtml(local.zone)}
+                  <span style="font-size:13px;">&nbsp;your local time</span>
+                </td>
+              </tr>`
+    : ""
+}
+              <tr>
+                <td style="padding:8px 0 0 0;font-family:${MONO};font-size:11px;letter-spacing:0.14em;text-transform:uppercase;color:${ASH};">
+                  ${escapeHtml(when.timeZone)}
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+
+        <tr>
+          <td style="padding:26px 40px 0 40px;">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-top:1px solid ${HAIR};">
+              <tr><td style="padding:16px 0 0 0;">${label("We'll call you at")}</td></tr>
+              <tr>
+                <td style="padding:10px 0 0 0;font-family:${MONO};font-size:18px;letter-spacing:0.02em;color:${INK};">
+                  ${escapeHtml(phone)}
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+
+        <tr>
+          <td style="padding:26px 40px 0 40px;font-family:${SANS};font-size:16px;line-height:1.65;color:${ASH};">
+            Please be available at the scheduled time so our team can reach you.<br /><br />
+            We&rsquo;ll use the conversation to understand what you&rsquo;re looking to build, the
+            problem you&rsquo;re trying to solve, and how TechnoSpirit may be able to help.
+          </td>
+        </tr>
+${
+  discussion
+    ? `
+        <tr>
+          <td style="padding:30px 40px 0 40px;">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-top:1px solid ${HAIR};">
+              <tr><td style="padding:16px 0 0 0;">${label("What you'd like to discuss")}</td></tr>
+              <tr>
+                <td style="padding:12px 0 0 0;font-family:${SANS};font-size:15px;line-height:1.65;color:${INK};white-space:pre-wrap;">${escapeHtml(
+                  discussion,
+                )}</td>
+              </tr>
+            </table>
+          </td>
+        </tr>`
+    : ""
+}
+        <tr>
+          <td style="padding:30px 40px 0 40px;font-family:${SANS};font-size:16px;line-height:1.65;color:${ASH};">
+            If anything changes, simply reply to this email and let us know.<br /><br />
+            Looking forward to speaking with you.
+          </td>
+        </tr>
+
+        <tr>
+          <td style="padding:26px 40px 40px 40px;font-family:${SANS};font-size:15px;line-height:1.6;color:${INK};">
+            <strong style="font-weight:800;">TechnoSpirit</strong><br />
+            <span style="color:${ASH};">AI &middot; Automation &middot; Digital Engineering</span>
+          </td>
+        </tr>`;
+
+  const text = [
+    "YOU'RE BOOKED.",
+    "",
+    `Hi ${firstName},`,
+    "",
+    "Your call with TechnoSpirit has been booked successfully.",
+    "",
+    "— CALL DETAILS —",
+    when.date,
+    `${when.time} ${when.zone} (${when.timeZone})`,
+    local ? `${local.date} · ${local.time} ${local.zone} — your local time` : null,
+    "",
+    `We'll call you at: ${phone}`,
+    "",
+    "Please be available at the scheduled time so our team can reach you.",
+    "We'll use the conversation to understand what you're looking to build, the",
+    "problem you're trying to solve, and how TechnoSpirit may be able to help.",
+    discussion ? "" : null,
+    discussion ? "— WHAT YOU'D LIKE TO DISCUSS —" : null,
+    discussion || null,
+    "",
+    "If anything changes, simply reply to this email and let us know.",
+    "Looking forward to speaking with you.",
+    "",
+    "TechnoSpirit",
+    "AI · Automation · Digital Engineering",
+  ]
+    .filter((line) => line !== null)
+    .join("\n");
+
+  return {
+    subject: "Your call with TechnoSpirit is confirmed",
+    html: shell({
+      title: "Your call is confirmed",
+      preview: `${when.date} at ${when.time} ${when.zone} — we'll call ${phone}.`,
+      body,
+    }),
+    text,
+  };
+}
+
+/* ------------------------------------------------------------------ */
+/*  5. Call booking — internal notification                            */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Written to be read in five seconds on a phone: who, when, where they are,
+ * what number to dial, what they want. The visitor's local time is the headline
+ * because that is the number the team has to hit; the business-timezone
+ * rendering sits underneath it so nobody has to do the conversion.
+ */
+export function bookingNotification({
+  name,
+  email,
+  phone,
+  country,
+  company,
+  discussion,
+  scheduledAt,
+  timezone,
+  businessTimezone,
+  createdAt,
+  id,
+}) {
+  /**
+   * Our clock leads here too, and for the same reason as the client email:
+   * this is the time the client was shown and agreed to, so it is the time the
+   * team has to dial at. Their own local time follows underneath when it says
+   * something different — useful for knowing whether you are calling into
+   * someone's evening.
+   */
+  const client = callStamp(scheduledAt, businessTimezone || timezone);
+  const local =
+    timezone && businessTimezone && timezone !== businessTimezone
+      ? callStamp(scheduledAt, timezone)
+      : null;
+
+  const created = new Intl.DateTimeFormat("en-GB", {
+    dateStyle: "medium",
+    timeStyle: "short",
+    timeZone: "UTC",
+  }).format(createdAt ?? new Date());
+
+  const body = `
+        <tr>
+          <td style="padding:36px 40px 0 40px;">
+            ${label("Internal / New call booking", SIGNAL)}
+          </td>
+        </tr>
+
+        <tr>
+          <td style="padding:14px 40px 0 40px;font-family:${SANS};font-size:30px;line-height:1.06;font-weight:800;letter-spacing:-0.025em;color:${INK};">
+            ${escapeHtml(name)}
+          </td>
+        </tr>
+
+        <tr>
+          <td style="padding:8px 40px 0 40px;font-family:${SANS};font-size:15px;color:${ASH};">
+            ${escapeHtml(company || country || "New booking")}
+          </td>
+        </tr>
+
+        <!-- WHEN, first and largest. -->
+        <tr>
+          <td style="padding:26px 40px 0 40px;">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-top:2px solid ${INK};">
+              <tr><td style="padding:16px 0 0 0;">${label("Call")}</td></tr>
+              <tr>
+                <td style="padding:12px 0 0 0;font-family:${SANS};font-size:20px;line-height:1.3;font-weight:800;letter-spacing:-0.02em;color:${INK};">
+                  ${escapeHtml(client.date)}<br />
+                  ${escapeHtml(client.time)} <span style="color:${SIGNAL};">${escapeHtml(client.zone)}</span>
+                  <span style="font-size:13px;font-weight:400;color:${ASH};">&nbsp;our time</span>
+                </td>
+              </tr>
+${
+  local
+    ? `              <tr>
+                <td style="padding:10px 0 0 0;font-family:${SANS};font-size:15px;line-height:1.5;color:${ASH};">
+                  ${escapeHtml(local.date)} &middot; ${escapeHtml(local.time)} ${escapeHtml(local.zone)}
+                  <span style="font-size:13px;">&nbsp;client local time</span>
+                </td>
+              </tr>`
+    : ""
+}
+              <tr><td style="padding:12px 0 0 0;">${row("Timezone", client.timeZone, { mono: true })}</td></tr>
+            </table>
+          </td>
+        </tr>
+
+        <!-- WHO. -->
+        <tr>
+          <td style="padding:26px 40px 0 40px;">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-top:1px solid ${HAIR};">
+              <tr><td style="padding:16px 0 0 0;">${label("Client")}</td></tr>
+              <tr><td style="padding:14px 0 0 0;">${row("Name", name)}</td></tr>
+              <tr><td style="padding:12px 0 0 0;">${row("Email", email, { mono: true })}</td></tr>
+              <tr><td style="padding:12px 0 0 0;">${row("Phone", phone, { mono: true })}</td></tr>
+              <tr><td style="padding:12px 0 0 0;">${row("Country", country)}</td></tr>
+              <tr><td style="padding:12px 0 0 0;">${row("Company", company || "—")}</td></tr>
+            </table>
+          </td>
+        </tr>
+
+        <!-- WHAT. -->
+        <tr>
+          <td style="padding:26px 40px 0 40px;">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-top:1px solid ${HAIR};">
+              <tr><td style="padding:16px 0 0 0;">${label("Discussion")}</td></tr>
+              <tr>
+                <td style="padding:12px 0 0 0;font-family:${SANS};font-size:15px;line-height:1.65;color:${INK};white-space:pre-wrap;">${escapeHtml(
+                  discussion || "Not specified.",
+                )}</td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+
+        <tr>
+          <td style="padding:26px 40px 0 40px;">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-top:1px solid ${HAIR};">
+              <tr><td style="padding:16px 0 0 0;">${label("Booking created")}</td></tr>
+              <tr><td style="padding:12px 0 0 0;">${row("Created", `${created} UTC`, { mono: true })}</td></tr>
+              ${id ? `<tr><td style="padding:12px 0 0 0;">${row("Ref", String(id), { mono: true })}</td></tr>` : ""}
+            </table>
+          </td>
+        </tr>
+
+        <!-- One tap dials them. Reply-To is the client, same as the inquiry mail. -->
+        <tr>
+          <td style="padding:30px 40px 40px 40px;">
+            <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+              <tr>
+                <td style="background:${INK};">
+                  <a href="tel:${encodeURI(phone)}"
+                     style="display:inline-block;padding:14px 26px;font-family:${MONO};font-size:11px;letter-spacing:0.14em;text-transform:uppercase;color:${PAPER};text-decoration:none;">
+                    Call ${escapeHtml(phone)} &#8599;
+                  </a>
+                </td>
+              </tr>
+            </table>
+            <div style="padding:14px 0 0 0;">${label("Reply goes straight to the client")}</div>
+          </td>
+        </tr>`;
+
+  const text = [
+    `NEW CALL BOOKING — ${name}`,
+    "",
+    "— CLIENT —",
+    `Name:     ${name}`,
+    `Email:    ${email}`,
+    `Phone:    ${phone}`,
+    `Country:  ${country}`,
+    `Company:  ${company || "—"}`,
+    "",
+    "— CALL —",
+    `Date:     ${client.date}`,
+    `Time:     ${client.time} ${client.zone}  (our time — what the client was shown)`,
+    `Timezone: ${client.timeZone}`,
+    local ? `Client local: ${local.date} · ${local.time} ${local.zone}` : null,
+    "",
+    "— DISCUSSION —",
+    discussion || "Not specified.",
+    "",
+    "— BOOKING CREATED —",
+    `${created} UTC`,
+    id ? `Ref: ${id}` : null,
+  ]
+    .filter((line) => line !== null)
+    .join("\n");
+
+  return {
+    subject: `New Call Booked — ${name}`,
+    html: shell({
+      title: "New call booking",
+      preview: `${client.date} · ${client.time} ${client.zone} · ${phone}`,
+      body,
+    }),
+    text,
+  };
+}

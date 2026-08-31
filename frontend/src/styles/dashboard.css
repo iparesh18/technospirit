@@ -1195,3 +1195,130 @@
         transition-duration: 0.01ms;
     }
 }
+
+/* ==========================================================================
+   BOOKED CALLS
+
+   Additive. Every structural class this screen uses — .ts-dash-page, .ts-inq-*,
+   .ts-detail-*, .ts-stat-*, .ts-pill, .ts-seg — is the one the Inquiries screen
+   already uses, unchanged. What is below is only what a call needs and an
+   email does not: the time to ring, the number to ring, and the flat badges.
+   ========================================================================== */
+
+.ts-bkl-controls {
+    margin-top: 1.5rem;
+}
+
+/* The operational line: when, in the client's zone, and what to dial. Given
+   more weight than the preview text on an inquiry row, because these are the
+   two things someone scanning this list is actually looking for. */
+.ts-bkl-when {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.4rem 0.7rem;
+    margin-top: 0.15rem;
+}
+.ts-bkl-when-date {
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-stretch: 90%;
+    font-size: 1rem;
+    letter-spacing: -0.02em;
+    color: #ffffff;
+}
+.ts-bkl-when-zone {
+    font-family: var(--font-mono);
+    font-size: 0.6rem;
+    letter-spacing: 0.14em;
+    color: var(--color-signal);
+}
+.ts-bkl-phone {
+    font-family: var(--font-mono);
+    font-size: 0.76rem;
+    letter-spacing: 0.02em;
+    color: #b4b4b4;
+}
+
+/* — flat badges ————————————————————————————————————
+   Deliberately NOT pills. .ts-pill is the status object and there is exactly
+   one of those per row; these are attributes, and giving them the same shape
+   would make a row read as five competing statuses. Hairline box, no fill.
+   ------------------------------------------------------------------------ */
+.ts-tagrow {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.3rem;
+    margin-top: 0.55rem;
+}
+.ts-tag {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.2rem 0.42rem;
+    border: 1px solid rgba(255, 255, 255, 0.22);
+    font-family: var(--font-mono);
+    font-size: 0.56rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    line-height: 1;
+    color: #a8a8a8;
+    white-space: nowrap;
+}
+/* Only the clock's own badge earns emphasis — it is the one that changes. */
+.ts-tag[data-tag="today"] {
+    color: var(--color-signal);
+    border-color: var(--color-signal);
+}
+.ts-tag[data-tag="upcoming"] {
+    color: #e4e4e4;
+    border-color: rgba(255, 255, 255, 0.4);
+}
+.ts-tag[data-tag="past"] {
+    color: #6f6f6f;
+    border-color: rgba(255, 255, 255, 0.14);
+}
+
+/* — detail pane ————————————————————————————————— */
+
+.ts-bkd-when {
+    margin-top: 0.9rem;
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-stretch: 84%;
+    font-size: clamp(1.15rem, 2.4vw, 1.5rem);
+    line-height: 1.12;
+    letter-spacing: -0.03em;
+    color: #ffffff;
+}
+.ts-bkd-when-time {
+    margin-top: 0.2rem;
+}
+.ts-bkd-zone {
+    margin-left: 0.55rem;
+    font-family: var(--font-mono);
+    font-size: 0.66rem;
+    font-weight: 500;
+    letter-spacing: 0.14em;
+    color: var(--color-signal);
+}
+.ts-bkd-tags {
+    margin-top: 1rem;
+}
+.ts-bkd-tel {
+    color: inherit;
+    text-decoration: none;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.28);
+    transition: border-color 160ms ease, color 160ms ease;
+}
+.ts-bkd-tel:hover {
+    color: var(--color-signal);
+    border-color: var(--color-signal);
+}
+
+/* The inquiry row spends red on `purpose`, because on that screen the purpose
+   IS the signal. A company name is not — it is an attribute, like the tags
+   under it — so the booking row borrows the row's shape and returns the
+   colour. Red on this screen belongs to SCHEDULED, TODAY, and nothing else. */
+.ts-bkl-company {
+    color: #b4b4b4;
+}

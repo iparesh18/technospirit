@@ -21,7 +21,7 @@ import sharp from "sharp";
 import fs from "node:fs/promises";
 import path from "node:path";
 
-const SRC = "public";
+const SRC = "public/images";
 const OUT = "public/capabilities/optimized";
 
 const PLATES = [

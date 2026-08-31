@@ -1069,6 +1069,90 @@ html.lenis body {
     min-height: 22rem;
 }
 
+/* ── the second way in: BOOK A CALL ─────────────────────────────────────
+   Under the brief, in the same column, on its own hairline. Outline rather
+   than fill, so the page keeps ONE primary action and this reads as the
+   alternative — but it is the same slab, the same red panel wiping up from
+   the baseline, and the same arrow, at the same durations and easing as
+   `.ts-cta` above. The popup it opens is a portal and owns none of this.
+   -------------------------------------------------------------------- */
+.ts-bookcta {
+    margin-top: clamp(2.5rem, 4.5vw, 3.5rem);
+    padding-top: clamp(1.5rem, 2.6vw, 2rem);
+    border-top: 1px solid var(--color-hair);
+}
+.ts-bookcta-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 1rem;
+}
+.ts-bookcta-lead {
+    margin-top: 0.85rem;
+    max-width: 24rem;
+    font-size: 0.98rem;
+    color: var(--color-ash);
+}
+
+.ts-bookcta-btn {
+    position: relative;
+    display: flex;
+    width: 100%;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1.5rem;
+    overflow: hidden;
+    margin-top: clamp(1.25rem, 2.2vw, 1.6rem);
+    border: 1px solid var(--color-ink);
+    background: transparent;
+    color: var(--color-ink);
+    padding: 1.05rem 1.75rem;
+    cursor: pointer;
+}
+@media (min-width: 640px) {
+    .ts-bookcta-btn {
+        padding: 1.2rem 2.25rem;
+    }
+}
+.ts-bookcta-fill {
+    position: absolute;
+    inset: 0;
+    background: var(--color-signal);
+    transform: scaleY(0);
+    transform-origin: bottom center;
+    transition: transform 500ms var(--ease-out-expo);
+}
+.ts-bookcta-btn:hover .ts-bookcta-fill,
+.ts-bookcta-btn:focus-visible .ts-bookcta-fill {
+    transform: scaleY(1);
+}
+.ts-bookcta-label {
+    position: relative;
+    z-index: 1;
+    font-size: 0.7rem;
+    transition: color 300ms var(--ease-out-expo);
+}
+.ts-bookcta-arrow {
+    position: relative;
+    z-index: 1;
+    width: 1rem;
+    height: 1rem;
+    flex: 0 0 auto;
+    transition:
+        transform 500ms var(--ease-out-expo),
+        color 300ms var(--ease-out-expo);
+}
+.ts-bookcta-btn:hover .ts-bookcta-label,
+.ts-bookcta-btn:focus-visible .ts-bookcta-label,
+.ts-bookcta-btn:hover .ts-bookcta-arrow,
+.ts-bookcta-btn:focus-visible .ts-bookcta-arrow {
+    color: #ffffff;
+}
+.ts-bookcta-btn:hover .ts-bookcta-arrow,
+.ts-bookcta-btn:focus-visible .ts-bookcta-arrow {
+    transform: translate3d(0.25rem, -0.25rem, 0);
+}
+
 /* ==========================================================================
    CONTACT — prefers-reduced-motion
    The reveal still happens; it just stops chasing anything. The plate is

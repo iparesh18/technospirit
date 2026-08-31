@@ -5,6 +5,7 @@ import RouteTransition from "@/components/layout/RouteTransition";
 import Cursor from "@/components/layout/Cursor";
 import Nav from "@/components/layout/Nav";
 import Footer from "@/components/layout/Footer";
+import AIChatLauncher from "@/components/ai-chat/AIChatLauncher";
 import AuthProvider from "@/context/AuthProvider";
 import ProtectedRoute from "@/components/dashboard/ProtectedRoute";
 import { ScrollTrigger } from "@/lib/gsap";
@@ -40,6 +41,7 @@ const DashboardLayout = lazy(() => import("@/components/dashboard/DashboardLayou
 const Login = lazy(() => import("@/pages/dashboard/Login"));
 const Overview = lazy(() => import("@/pages/dashboard/Overview"));
 const Inquiries = lazy(() => import("@/pages/dashboard/Inquiries"));
+const BookedCalls = lazy(() => import("@/pages/dashboard/BookedCalls"));
 
 /**
  * Pulls the split route chunks into the module cache once the browser is idle,
@@ -126,6 +128,16 @@ function MarketingShell() {
       </main>
 
       <Footer />
+
+      {/*
+        Public site only. The dashboard is an operational tool and has no use
+        for a sales assistant; mounting it here rather than around <Routes>
+        also keeps it out of the admin chunk entirely.
+
+        Only the launcher is in this bundle — the panel is a dynamic import
+        behind the click, so a visitor who never opens it pays for a button.
+      */}
+      <AIChatLauncher />
     </SmoothScroll>
   );
 }
@@ -147,52 +159,74 @@ function MarketingShell() {
  */
 function AdminShell() {
   return (
-    <Suspense
-      fallback={
-        <div className="ts-dash-boot" role="status">
-          <span className="ts-label">LOADING</span>
-        </div>
-      }
-    >
-      <Outlet />
-    </Suspense>
+    /**
+     * <AuthProvider> lives HERE, not around <Routes>.
+     *
+     * It asks the server who we are exactly once on mount. Around the whole
+     * router that meant every visitor to every marketing page fired
+     * `GET /api/auth/me` — a request no public page has a use for, which for
+     * an anonymous visitor (i.e. all of them) answers 401 and prints
+     * "Failed to load resource: 401 (Unauthorized)" in the console of the home
+     * page. It also made the public site's console output depend on whether
+     * the API was reachable at all.
+     *
+     * Mounted here it is scoped to the three components that actually consume
+     * it — ProtectedRoute, DashboardLayout and Login — and refreshing
+     * /dashboard still restores the session, which is the behaviour the
+     * provider exists for. It is the same reasoning as the shell split above:
+     * the admin area's machinery should not run on the public site.
+     */
+    <AuthProvider>
+      <Suspense
+        fallback={
+          <div className="ts-dash-boot" role="status">
+            <span className="ts-label">LOADING</span>
+          </div>
+        }
+      >
+        <Outlet />
+      </Suspense>
+    </AuthProvider>
   );
 }
 
 export default function App() {
   return (
     <BrowserRouter>
-      <AuthProvider>
-        <Routes>
-          {/* ── public ────────────────────────────────────────────── */}
-          <Route element={<MarketingShell />}>
-            <Route path="/" element={<Home />} />
-            <Route path="/about" element={<About />} />
-            <Route path="/services" element={<Services />} />
-            <Route path="/why-us" element={<WhyUs />} />
-            <Route path="/contact" element={<Contact />} />
-            <Route path="/lab" element={<Lab />} />
-            <Route path="/capabilities" element={<Capabilities />} />
-            <Route path="*" element={<NotFound />} />
-          </Route>
+      <Routes>
+        {/* ── public ────────────────────────────────────────────── */}
+        <Route element={<MarketingShell />}>
+          <Route path="/" element={<Home />} />
+          <Route path="/about" element={<About />} />
+          <Route path="/services" element={<Services />} />
+          <Route path="/why-us" element={<WhyUs />} />
+          <Route path="/contact" element={<Contact />} />
+          <Route path="/lab" element={<Lab />} />
+          <Route path="/capabilities" element={<Capabilities />} />
+          <Route path="*" element={<NotFound />} />
+        </Route>
 
-          {/* ── admin ─────────────────────────────────────────────── */}
-          <Route path="/dashboard" element={<AdminShell />}>
-            <Route path="login" element={<Login />} />
+        {/* ── admin ─────────────────────────────────────────────── */}
+        <Route path="/dashboard" element={<AdminShell />}>
+          <Route path="login" element={<Login />} />
 
-            {/* Everything below requires a session. The guard is a layout
-                route, so a page added here is protected by default — and the
-                real enforcement is still server-side on /api/admin/*. */}
-            <Route element={<ProtectedRoute />}>
-              <Route element={<DashboardLayout />}>
-                <Route index element={<Overview />} />
-                <Route path="inquiries" element={<Inquiries />} />
-                <Route path="inquiries/:id" element={<Inquiries />} />
-              </Route>
+          {/* Everything below requires a session. The guard is a layout
+              route, so a page added here is protected by default — and the
+              real enforcement is still server-side on /api/admin/*. */}
+          <Route element={<ProtectedRoute />}>
+            <Route element={<DashboardLayout />}>
+              <Route index element={<Overview />} />
+              <Route path="inquiries" element={<Inquiries />} />
+              <Route path="inquiries/:id" element={<Inquiries />} />
+              {/* Same two-route shape as inquiries: the list is the page and
+                  a selected call is a real URL, so one can be linked and
+                  refreshed. */}
+              <Route path="calls" element={<BookedCalls />} />
+              <Route path="calls/:id" element={<BookedCalls />} />
             </Route>
           </Route>
-        </Routes>
-      </AuthProvider>
+        </Route>
+      </Routes>
     </BrowserRouter>
   );
 }

@@ -1,28 +1,30 @@
-import { useState } from "react";
-import ScrollVideoStage from "@/components/lab/ScrollVideoStage";
-import LabBeats from "@/components/lab/LabBeats";
-import LabRead from "@/components/lab/LabRead";
-import LabHud from "@/components/lab/LabHud";
-import LabHandoff from "@/components/lab/LabHandoff";
-import LabSeam from "@/components/lab/LabSeam";
-import { LabProgressContext, createProgressStore } from "@/components/lab/labProgress";
+import { lazy, Suspense } from "react";
 import usePageMeta from "@/hooks/usePageMeta";
+import useCapabilityDevice from "@/components/capabilities/useCapabilityDevice";
+import LabRestricted from "@/components/lab/LabRestricted";
 
 /**
- * /lab — the sequence.
+ * /lab — device-gated, on exactly the same terms as /capabilities.
  *
- * Three movements, and they are deliberately not the same temperature:
+ * The gate is `useCapabilityDevice`, reused rather than reimplemented. That is
+ * not convenience: this page is a scroll-scrubbed film, so it needs the same
+ * three things that page needs — a pointer that hovers, the project's 1024px
+ * desktop threshold, and enough short-edge height to hold a pinned stage. The
+ * hook's own notes already name the /lab decode path as drawing the line at
+ * 1024px, and `ScrollVideoStage` gates its decode on
+ * `(min-width: 1024px) and (pointer: fine)`. A second, slightly different
+ * definition of "desktop" here would be a bug waiting to happen.
  *
- *   01  the cinematic. One pinned stage, one piece of footage, five
- *       statements and one explorable moment. Nothing scrolls past it.
- *   02  the handoff. The last frame follows the reader out of the sequence,
- *       cut into the shape of the sentence the sequence was making.
- *   03  the seam. The monolith's gesture at page scale, and the way out.
+ * Because the hook re-evaluates on media-query change and on resize, rotating
+ * a phone or dragging the window across the threshold swaps the branch live.
  *
- * The sequence position lives in a store rather than in state — see
- * `labProgress.js`. React renders this tree once; every frame after that is
- * imperative.
+ * The sequence is behind a dynamic import so the gate can be paid before the
+ * weight is: a phone downloads this route chunk and the restricted screen, and
+ * nothing below <LabExperience> — no footage, no GSAP stage, no HUD — is ever
+ * requested.
  */
+const LabExperience = lazy(() => import("@/components/lab/LabExperience"));
+
 export default function Lab() {
   usePageMeta({
     title: "Lab — TechnoSpirit",
@@ -30,21 +32,17 @@ export default function Lab() {
       "A scroll-controlled sequence: a closed system opens, the core lights, and what runs behind the interface becomes the point.",
   });
 
-  
-  // Created exactly once, by the state initialiser. A store rebuilt on render
-  // would drop every subscriber the children set up in their own effects.
-  const [store] = useState(createProgressStore);
+  const capable = useCapabilityDevice();
+
+  // `null` is the pre-decision frame. Rendering neither branch keeps the
+  // dynamic import unrequested until the answer is known — on a phone it is
+  // never requested at all.
+  if (capable === null) return <div className="min-h-[100svh]" aria-hidden="true" />;
+  if (!capable) return <LabRestricted />;
 
   return (
-    <LabProgressContext.Provider value={store}>
-      <ScrollVideoStage store={store}>
-        <LabHud />
-        <LabBeats />
-        <LabRead />
-      </ScrollVideoStage>
-
-      <LabHandoff />
-      <LabSeam />
-    </LabProgressContext.Provider>
+    <Suspense fallback={<div className="min-h-[100svh]" aria-hidden="true" />}>
+      <LabExperience />
+    </Suspense>
   );
 }

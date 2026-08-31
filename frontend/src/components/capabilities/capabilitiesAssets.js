@@ -4,9 +4,10 @@
  *
  * Paths point at `public/capabilities/optimized/`, which is written by
  * `scripts/optimize-capabilities-images.mjs` and
- * `scripts/optimize-capabilities-video.mjs`. The untouched sources stay in
- * `public/` as the masters and are never referenced by the app — the browser
- * has no path to the 981 KB PNG or the single-keyframe MP4s.
+ * `scripts/optimize-capabilities-video.mjs`. The untouched sources stay as the
+ * masters (stills in `public/images/`, footage in `public/`) and are never
+ * referenced by the app — the browser has no path to the 981 KB PNG or the
+ * single-keyframe MP4s.
  */
 
 const DIR = "/capabilities/optimized";

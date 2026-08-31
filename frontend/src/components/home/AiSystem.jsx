@@ -107,9 +107,6 @@ export default function AiSystem() {
                 >
                   <div className="mb-5 flex items-center justify-between">
                     <span className="ts-label text-signal">{stage.id}</span>
-                    <span className="ts-label text-white/35">
-                      {String(i + 1).padStart(2, "0")}/03
-                    </span>
                   </div>
                   <h3 className="ts-display-wide text-[1.35rem] text-white">{stage.label}</h3>
                   <ul className="mt-5 space-y-2">

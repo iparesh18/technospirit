@@ -7,13 +7,28 @@ import useWorldClock from "@/hooks/useWorldClock";
 import { cn } from "@/lib/utils";
 
 export const NAV_ITEMS = [
-  { index: "01", label: "Home", to: "/" },
-  { index: "02", label: "About", to: "/about" },
-  { index: "03", label: "Services", to: "/services" },
-  { index: "04", label: "Capabilities", to: "/capabilities" },
-  { index: "05", label: "Why Us", to: "/why-us" },
-  { index: "06", label: "Contact", to: "/contact" },
+  { label: "Home", to: "/" },
+  { label: "About", to: "/about" },
+  { label: "Services", to: "/services" },
+  { label: "Capabilities", to: "/capabilities" },
+  { label: "Why Us", to: "/why-us" },
+  { label: "Contact", to: "/contact" },
 ];
+
+/**
+ * The same list, minus /capabilities — what the responsive menu offers.
+ *
+ * /capabilities is desktop-only by design: `useCapabilityDevice` requires a
+ * pointer that hovers, and every phone and touch tablet fails that in both
+ * orientations, so the row was sending touch visitors to the restricted screen
+ * and nowhere else. Dropping it leaves CONTACT as the last row and the thing a
+ * visitor on a phone is actually reaching for.
+ *
+ * Derived from NAV_ITEMS rather than written out a second time, so a route
+ * added above appears in both menus and only the exclusion has to be
+ * maintained. The desktop nav still renders NAV_ITEMS in full.
+ */
+const MOBILE_NAV_ITEMS = NAV_ITEMS.filter((item) => item.to !== "/capabilities");
 
 /* -------------------------------------------------------------------------- */
 /*  Desktop link — index number slides in, label lifts, red rule draws under   */
@@ -32,20 +47,8 @@ function NavItem({ item }) {
     >
       {({ isActive }) => (
         <>
-          <span
-            className={cn(
-              "ts-label text-[0.6rem] transition-all duration-400 ease-[cubic-bezier(0.16,1,0.3,1)]",
-              isActive
-                ? "text-signal opacity-100"
-                : "opacity-0 -translate-x-1 group-hover/nav:translate-x-0 group-hover/nav:opacity-100",
-            )}
-            aria-hidden="true"
-          >
-            {item.index}
-          </span>
-
           {/* rollover: the label lifts out and an identical one rides in */}
-          <span className="ts-label relative block overflow-hidden text-[0.7rem]">
+          <span className="ts-label relative block overflow-hidden text-[0.82rem]">
             <span className="block transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover/nav:-translate-y-full">
               {item.label}
             </span>
@@ -117,7 +120,7 @@ function MobileMenu({ open, onOpenChange }) {
 
           {/* nav rows */}
           <nav className="flex-1 overflow-y-auto" aria-label="Mobile">
-            {NAV_ITEMS.map((item, i) => (
+            {MOBILE_NAV_ITEMS.map((item, i) => (
               <Link
                 key={item.to}
                 to={item.to}
@@ -129,9 +132,6 @@ function MobileMenu({ open, onOpenChange }) {
                   <span className="ts-display block text-[clamp(2.4rem,13vw,4.5rem)] text-white">
                     {item.label}
                   </span>
-                </span>
-                <span className="ts-label text-signal" data-menu-index>
-                  {item.index}
                 </span>
               </Link>
             ))}
@@ -281,30 +281,62 @@ export default function Nav() {
             to="/"
             data-cursor="open"
             aria-label="TechnoSpirit — home"
-            className="group/mark flex items-center gap-2.5"
+            className="group/mark flex shrink-0 items-center"
           >
-            <span
-              className={cn(
-                "block bg-signal transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)]",
-                condensed ? "size-1.5" : "size-2",
-              )}
-              aria-hidden="true"
-            />
-            <span className="ts-display-wide relative block overflow-hidden text-[0.95rem] leading-none sm:text-[1.05rem]">
-              <span className="block transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover/mark:-translate-y-full">
-                TECHNOSPIRIT
-              </span>
-              <span
+            {/*
+              The wordmark is the logo file rather than set type, so the
+              rollover needs a box of its own: the second copy rides in from
+              below on `translate-y-full`, which only resolves against a height
+              the glyphs used to supply. Both copies are sized off that height
+              with `w-auto` + `object-contain`, so the source can never be
+              stretched.
+
+              The art is `logo-nav.png`, generated from `logo-new.png` — which
+              ships as an opaque PNG on a slate ground, so the ground is keyed
+              out to produce the alpha this box needs. It is tight to its own
+              bounding box, which is the property that matters here: with
+              transparent padding around the mark, the box height and the
+              height of the visible glyphs are two different numbers and the
+              wordmark reads tiny at any box size. Tight, `h-*` is the mark's
+              real height, which is what lets these values stay small enough to
+              keep the row from overflowing. The mark is the tallest thing in
+              it, so it — not the
+              START A PROJECT / MENU buttons — sets the bar's height.
+
+              On ink grounds the mark is filtered to a white silhouette. The
+              artwork is black type with a red accent and would otherwise
+              disappear against black; `brightness-0 invert` is the direct
+              analogue of the white-on-ink colour the text carried, and Tailwind
+              composes brightness before invert, so it lands on white rather
+              than on an inverted red.
+            */}
+            <span className="relative block h-12 overflow-hidden sm:h-14 xl:h-16">
+              <img
+                src="/images/logo-nav.png"
+                alt="TechnoSpirit"
+                width="1200"
+                height="469"
+                className={cn(
+                  "block h-full w-auto object-contain transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover/mark:-translate-y-full",
+                  onInk && "brightness-0 invert",
+                )}
+              />
+              <img
+                src="/images/logo-nav.png"
+                alt=""
                 aria-hidden="true"
-                className="absolute inset-0 block translate-y-full text-signal transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover/mark:translate-y-0"
-              >
-                TECHNOSPIRIT
-              </span>
+                width="1200"
+                height="469"
+                className={cn(
+                  "absolute top-0 left-0 block h-full w-auto translate-y-full object-contain transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover/mark:translate-y-0",
+                  onInk && "brightness-0 invert",
+                )}
+              />
             </span>
           </Link>
 
           {/* desktop links */}
-          <nav className="hidden items-center gap-9 lg:flex" aria-label="Primary">
+          <nav className="hidden items-center gap-9 xl:flex" aria-label="Primary">
             {NAV_ITEMS.map((item) => (
               <NavItem key={item.to} item={item} />
             ))}
@@ -331,7 +363,7 @@ export default function Nav() {
               type="button"
               onClick={() => setMenuOpen(true)}
               aria-label="Open navigation menu"
-              className="ts-label relative border border-current px-4 py-3 text-[0.66rem] transition-colors duration-300 hover:bg-signal hover:text-white lg:hidden"
+              className="ts-label relative border border-current px-4 py-3 text-[0.66rem] transition-colors duration-300 hover:bg-signal hover:text-white xl:hidden"
             >
               MENU
             </button>

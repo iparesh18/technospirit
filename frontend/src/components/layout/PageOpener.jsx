@@ -133,7 +133,7 @@ export default function PageOpener({
           {register.length > 0 && (
             <div className="col-span-12 mt-10 lg:col-span-5 lg:col-start-8 lg:mt-0">
               <ul data-open-body className={cn("border-t", ink ? "border-white/16" : "border-hair")}>
-                {register.map((item, i) => (
+                {register.map((item) => (
                   <li
                     key={item}
                     className={cn(
@@ -141,9 +141,6 @@ export default function PageOpener({
                       ink ? "border-white/12" : "border-hair",
                     )}
                   >
-                    <span className="ts-label text-signal tabular-nums">
-                      {String(i + 1).padStart(2, "0")}
-                    </span>
                     <span className="ts-label opacity-70">{item}</span>
                   </li>
                 ))}

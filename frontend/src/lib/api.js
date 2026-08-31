@@ -13,13 +13,17 @@
 
 /** An API failure with the pieces the UI actually renders. */
 export class ApiError extends Error {
-  constructor(message, { status, code, fields } = {}) {
+  constructor(message, { status, code, fields, fallback } = {}) {
     super(message);
     this.name = "ApiError";
     this.status = status;
     this.code = code;
     /** Per-field messages from server-side validation, keyed by field name. */
     this.fields = fields ?? null;
+    /** A second sentence the server attaches to assistant failures — the
+     *  contact number, so a visitor whose question just failed still has
+     *  somewhere to go. Never present on other endpoints. */
+    this.fallback = fallback ?? null;
   }
 
   /** True when the server said "not signed in" rather than "that was wrong". */
@@ -65,6 +69,7 @@ async function request(path, { method = "GET", body, signal } = {}) {
       status: response.status,
       code: payload?.code,
       fields: payload?.fields,
+      fallback: payload?.fallback,
     });
   }
 
@@ -75,6 +80,32 @@ async function request(path, { method = "GET", body, signal } = {}) {
 
 export const submitInquiry = (brief) =>
   request("/contact", { method: "POST", body: brief });
+
+/**
+ * Ask the assistant.
+ *
+ * The whole client side of the AI feature is this one function. There is no
+ * model name here, no provider, no SDK and no key — the browser posts a
+ * question and receives a sentence, and everything that decides what that
+ * sentence may contain lives on the server.
+ */
+export const sendChatMessage = ({ message, history }, signal) =>
+  request("/chat", { method: "POST", body: { message, history }, signal });
+
+/* — call bookings —————————————————————————————————— */
+
+/**
+ * The slots the server is currently willing to sell.
+ *
+ * Every instant comes back as UTC ISO. Nothing about the calendar is decided
+ * in the browser — not the working days, not the hours, not which times are
+ * still free — so a stale tab cannot offer a slot that no longer exists.
+ */
+export const fetchAvailability = (signal) => request("/bookings/availability", { signal });
+
+/** Book one. A 409 (`code: "SLOT_TAKEN"`) means someone else got there first. */
+export const createBooking = (booking) =>
+  request("/bookings", { method: "POST", body: booking });
 
 /* — auth ——————————————————————————————————————————— */
 
@@ -100,3 +131,18 @@ export const updateInquiryStatus = (id, status) =>
   request(`/admin/inquiries/${id}/status`, { method: "PATCH", body: { status } });
 
 export const fetchStats = (signal) => request("/admin/stats", { signal });
+
+export function fetchBookings({ page = 1, limit = 20, segment, status, search, signal } = {}) {
+  const params = new URLSearchParams({ page: String(page), limit: String(limit) });
+  if (segment && segment !== "all") params.set("segment", segment);
+  if (status && status !== "all") params.set("status", status);
+  if (search) params.set("search", search);
+  return request(`/admin/bookings?${params}`, { signal });
+}
+
+export const fetchBooking = (id, signal) => request(`/admin/bookings/${id}`, { signal });
+
+export const updateBookingStatus = (id, status) =>
+  request(`/admin/bookings/${id}/status`, { method: "PATCH", body: { status } });
+
+export const fetchBookingStats = (signal) => request("/admin/bookings/stats", { signal });

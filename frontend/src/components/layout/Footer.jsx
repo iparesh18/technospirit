@@ -17,7 +17,6 @@ const Aurora = lazy(() => import("@/components/motion/Aurora"));
 // actually approaching. Keeping WarpText a static import would drag `ogl`
 // straight back into the entry chunk and undo the Aurora split.
 const WarpText = lazy(() => import("@/components/motion/WarpText"));
-import useWorldClock from "@/hooks/useWorldClock";
 
 const CAPABILITIES = [
   { name: "Web Development", to: "/services" },
@@ -176,7 +175,6 @@ function Wordmark({ lines, tone = "paper", stacked = false }) {
 }
 
 export default function Footer() {
-  const clocks = useWorldClock();
   const year = new Date().getFullYear();
   /**
    * The closing statement is a contact CTA — "Let's build what's next." plus a
@@ -277,36 +275,71 @@ export default function Footer() {
 
           <div className="col-span-12 md:col-span-4">
             <div className="ts-label mb-5 text-signal">CONTACT</div>
-            {/* Real business details land here once provided — no invented data. */}
+            {/* Real business details land here once provided — no invented data.
+                EMAIL and PHONE are still genuinely unpublished, so they stay
+                marked pending rather than being filled with a plausible guess. */}
             <ul className="space-y-3 text-[0.95rem] text-white/70">
               <li className="flex items-baseline gap-3">
-                <span className="ts-label text-white/35">EMAIL</span>
+                <span className="ts-label shrink-0 text-white/35">EMAIL</span>
                 <span className="text-white/40">— pending —</span>
               </li>
               <li className="flex items-baseline gap-3">
-                <span className="ts-label text-white/35">PHONE</span>
+                <span className="ts-label shrink-0 text-white/35">PHONE</span>
                 <span className="text-white/40">— pending —</span>
               </li>
               <li className="flex items-baseline gap-3">
-                <span className="ts-label text-white/35">BASE</span>
-                <span className="text-white/40">— pending —</span>
+                <span className="ts-label shrink-0 text-white/35">BASE</span>
+                {/* <address> is the element for the contact details of the
+                    document it sits in, which is exactly what this is. It is
+                    italic by default in every browser, hence not-italic — the
+                    footer's register is the same quiet sans as the rows above. */}
+                <address className="not-italic leading-relaxed">
+                  TechnoSpirit LLC
+                  <br />
+                  319 Upas Ave S
+                  <br />
+                  Galloway, New Jersey 08205
+                  <br />
+                  USA
+                </address>
               </li>
             </ul>
           </div>
 
-          <div className="col-span-12 md:col-span-4">
-            <div className="ts-label mb-5 text-signal">COVERAGE</div>
-            <div className="grid grid-cols-2 gap-x-6 gap-y-2.5">
-              {clocks.map((z) => (
-                <div key={z.code} className="flex items-baseline justify-between gap-3">
-                  <span className="ts-label text-white/45">{z.code}</span>
-                  <span className="font-mono text-[0.8rem] tabular-nums text-white/75">
-                    {z.time}
-                  </span>
-                </div>
-              ))}
-            </div>
-            <p className="ts-label mt-5 leading-relaxed text-white/30">WORKING ACROSS TIME ZONES</p>
+          {/* ── the mark ────────────────────────────────────────────────
+              This column used to carry the six-city world clock. The logo
+              closes the band in its place: links, then details, then the
+              signature.
+
+              The asset is `logo-footer.jpg` — the new artwork flattened onto
+              pure white, because JPEG carries no alpha. That is also why the
+              `brightness-0 invert` filter that used to sit here is gone: it
+              existed only to recolour a transparent black-on-nothing PNG into
+              a white silhouette, and applied to a white-backed JPEG it would
+              paint the entire rectangle solid white with no logo in it at all.
+              Every size, position and spacing class below is unchanged. */}
+          {/* `items-center`, not the flex default.
+              A flex item whose cross size is `auto` gets stretched by
+              `align-items: stretch`, and that beats `height: auto` — so the
+              mark was being pulled to the height of the address column beside
+              it and rendered 272x199 instead of its own 272x106. Pinning the
+              cross axis is what lets the intrinsic ratio survive; centring is
+              then just where it sits against the taller column. */}
+          <div className="col-span-12 flex items-center justify-center md:col-span-4">
+            <img
+              src="/images/logo-footer.jpg"
+              alt=""
+              /* Decorative here on purpose: the wordmark below this band
+                 already carries an sr-only "TechnoSpirit", and a screen reader
+                 should not hear the brand twice in three seconds. */
+              aria-hidden="true"
+              width="1200"
+              height="469"
+              /* Below the fold on every page, and never the LCP element. */
+              loading="lazy"
+              decoding="async"
+              className="h-auto w-[14rem] sm:w-[16rem] md:w-full md:max-w-[19rem]"
+            />
           </div>
         </Reveal>
       </div>

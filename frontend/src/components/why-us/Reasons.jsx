@@ -518,9 +518,6 @@ export default function Reasons() {
                       data-ledger-line
                       className="flex items-baseline gap-4 sm:gap-6"
                     >
-                      <span className="ts-label ts-ledger-num w-7 shrink-0 tabular-nums">
-                        {r.id}
-                      </span>
                       <h3
                         data-ledger-title
                         className="ts-ledger-title ts-display-tight"

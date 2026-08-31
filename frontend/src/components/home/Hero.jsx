@@ -27,7 +27,7 @@ const MARQUEE_ITEMS = [
 export default function Hero() {
   const root = useRef(null);
   const clocks = useWorldClock();
-  const ist = clocks.find((z) => z.code === "IND");
+  const nyc = clocks.find((z) => z.code === "NYC");
 
   useGSAP(
     () => {
@@ -125,16 +125,22 @@ export default function Hero() {
 
       {/* ── top metadata rail ─────────────────────────────────────────── */}
       <div className="ts-shell relative z-10">
-        <div className="flex items-center justify-between gap-4 border-b border-hair pb-4">
-          <span data-hero-meta className="ts-label text-ash">
-            TECHNOLOGY STUDIO
-          </span>
-          <span data-hero-meta className="ts-label hidden text-ash sm:inline">
-            WEB · AI · GROWTH
-          </span>
+        {/*
+            The rail used to carry three items (TECHNOLOGY STUDIO / WEB · AI ·
+            GROWTH / the clock) held apart by `justify-between`. With the two
+            descriptive labels gone that would have dropped the clock to the
+            left edge, so the rail is `justify-end` now: the clock keeps the
+            right-hand position it already occupied and the hairline reads as a
+            rule under the nav rather than as a row with a gap in it.
+
+            The zone abbreviation is whatever `useWorldClock` resolved for this
+            instant, so it prints EST in winter and EDT in summer on its own.
+        */}
+        <div className="flex items-center justify-end gap-4 border-b border-hair pb-4">
           <span data-hero-meta className="ts-label flex items-center gap-2 text-ash">
-            <span className="hidden sm:inline">IND</span>
-            <span className="font-mono tabular-nums text-ink">{ist?.time ?? "--:--"}</span>
+            <span>NEW YORK, USA</span>
+            <span className="font-mono tabular-nums text-ink">{nyc?.time ?? "--:--"}</span>
+            <span>{nyc?.abbr ?? ""}</span>
           </span>
         </div>
       </div>
@@ -183,10 +189,36 @@ export default function Hero() {
           {/* offset aside — deliberately not a hero paragraph under the title */}
           <div
             data-hero-aside
-            className="col-span-12 mt-9 flex flex-col lg:col-span-3 lg:mt-0 lg:pt-4 xl:pl-8"
+            className="col-span-12 mt-9 flex flex-col lg:col-span-3 lg:mt-0 lg:pt-12 xl:pt-20 xl:pl-8"
           >
-            {/* discipline index, pinned to the top of the column */}
-            <div data-hero-body className="hidden lg:block">
+            <div data-hero-body className="border-t-2 border-ink pt-4">
+              <p className="ts-body max-w-sm text-[0.98rem] text-ash sm:text-base">
+                TechnoSpirit engineers <span className="text-ink">websites</span>,{" "}
+                <span className="text-ink">AI systems</span> and{" "}
+                <span className="text-ink">growth infrastructure</span> for businesses,
+                teams and markets that don't sit in one place.
+              </p>
+            </div>
+
+            {/* Two ways forward, deliberately unequal: the solid slab keeps
+                the lead, and the service index sits under it in the existing
+                outline tone so it reads as the quieter second option rather
+                than a competing button. Only the primary carries <Magnet> —
+                two pointer-attracting targets this close fight each other. */}
+            <div data-hero-body className="mt-6 flex flex-col items-start gap-3">
+              <Magnet padding={70} strength={4} className="w-full sm:w-auto">
+                <ActionLink to="/lab" className="w-full sm:w-auto">
+                  BEYOND THE ORDINARY
+                </ActionLink>
+              </Magnet>
+
+              <ActionLink to="/services" tone="outline" className="w-full sm:w-auto">
+                EXPLORE SERVICES
+              </ActionLink>
+            </div>
+
+            {/* discipline index, sits under the CTAs, in the space the column has spare */}
+            <div data-hero-body className="mt-10 hidden lg:block">
               <ul className="border-t border-hair">
                 {[
                   { id: "01", name: "Web" },
@@ -198,35 +230,14 @@ export default function Hero() {
                     className="flex items-baseline justify-between gap-4 border-b border-hair py-2.5"
                   >
                     <span className="ts-display-wide text-[0.95rem] text-ink">{d.name}</span>
-                    <span className="ts-label text-signal tabular-nums">{d.id}</span>
                   </li>
                 ))}
               </ul>
             </div>
 
-            <div className="lg:mt-12">
-            <div data-hero-body className="border-t-2 border-ink pt-4">
-              <p className="ts-body max-w-sm text-[0.98rem] text-ash sm:text-base">
-                TechnoSpirit engineers <span className="text-ink">websites</span>,{" "}
-                <span className="text-ink">AI systems</span> and{" "}
-                <span className="text-ink">growth infrastructure</span> for businesses,
-                teams and markets that don't sit in one place.
-              </p>
-            </div>
-
-            <div data-hero-body className="mt-6">
-              <Magnet padding={70} strength={4} className="w-full sm:w-auto">
-                <ActionLink to="/lab" className="w-full sm:w-auto">
-                  BEYOND THE ORDINARY
-                </ActionLink>
-              </Magnet>
-            </div>
-
             <div data-hero-body className="mt-6 flex items-center gap-3">
               <span className="ts-label text-ash">SCROLL</span>
               <span className="h-px w-10 bg-ink" aria-hidden="true" />
-              <span className="ts-label text-ash">01 / 08</span>
-            </div>
             </div>
           </div>
         </div>

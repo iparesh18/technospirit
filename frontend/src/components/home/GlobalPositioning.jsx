@@ -121,14 +121,6 @@ export default function GlobalPositioning() {
                   />
 
                   <div className="flex flex-wrap items-baseline gap-x-6 gap-y-2 py-4 sm:py-5">
-                    <span
-                      className={[
-                        "ts-label w-8 shrink-0 tabular-nums transition-colors duration-400",
-                        i === active ? "text-signal" : "text-white/30",
-                      ].join(" ")}
-                    >
-                      {String(i + 1).padStart(2, "0")}
-                    </span>
                     <span className="ts-display-wide w-20 shrink-0 text-[1.15rem] text-white sm:text-[1.4rem]">
                       {z.code}
                     </span>

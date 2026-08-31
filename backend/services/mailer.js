@@ -1,7 +1,12 @@
 import nodemailer from "nodemailer";
 import env from "../config/env.js";
 import { cleanHeader } from "../utils/sanitize.js";
-import { customerConfirmation, internalNotification } from "./emailTemplates.js";
+import {
+  bookingConfirmation,
+  bookingNotification,
+  customerConfirmation,
+  internalNotification,
+} from "./emailTemplates.js";
 
 /**
  * Mail transport.
@@ -110,4 +115,49 @@ export async function sendInquiryMail(inquiry) {
   return { customer: customer.status, internal: internal.status };
 }
 
-export default { sendInquiryMail, verifyTransport };
+/* — call bookings ————————————————————————————————————
+ *
+ * Same transport, same `send()`, same never-rejects contract. There is exactly
+ * one mail provider in this project and a booking does not get a second one —
+ * only two more templates.
+ */
+
+export function sendBookingConfirmation(booking) {
+  const { subject, html, text } = bookingConfirmation(booking);
+  return send(
+    { from: from(), to: booking.email, subject, html, text },
+    { tag: "booking-confirmation" },
+  );
+}
+
+export function sendBookingNotification(booking) {
+  const { subject, html, text } = bookingNotification(booking);
+  return send(
+    {
+      from: from(),
+      /**
+       * CONTACT_RECEIVER, read from the environment exactly like the inquiry
+       * notification — never a literal address in code. It stays server-side;
+       * nothing in the browser bundle knows where these land.
+       */
+      to: env.mail.receiver,
+      subject: cleanHeader(subject),
+      html,
+      text,
+      // Reply addresses the client, not the account that sent it.
+      replyTo: `"${cleanHeader(booking.name, { maxLength: 80 })}" <${booking.email}>`,
+    },
+    { tag: "booking-notification" },
+  );
+}
+
+/** Both booking messages, in parallel, neither able to fail the other. */
+export async function sendBookingMail(booking) {
+  const [customer, internal] = await Promise.all([
+    sendBookingConfirmation(booking),
+    sendBookingNotification(booking),
+  ]);
+  return { customer: customer.status, internal: internal.status };
+}
+
+export default { sendInquiryMail, sendBookingMail, verifyTransport };

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
-import { Inbox, LayoutGrid, LogOut, Menu, X } from "lucide-react";
+import { Inbox, LayoutGrid, LogOut, Menu, PhoneCall, X } from "lucide-react";
 import { useAuth } from "@/context/authContext";
 import { cn } from "@/lib/utils";
 
@@ -20,8 +20,9 @@ import { cn } from "@/lib/utils";
  * each plus a route. Nothing else in this file needs to change.
  */
 const SECTIONS = [
-  { to: "/dashboard", label: "Overview", index: "01", icon: LayoutGrid, end: true },
-  { to: "/dashboard/inquiries", label: "Inquiries", index: "02", icon: Inbox },
+  { to: "/dashboard", label: "Overview", icon: LayoutGrid, end: true },
+  { to: "/dashboard/inquiries", label: "Inquiries", icon: Inbox },
+  { to: "/dashboard/calls", label: "Booked Calls", icon: PhoneCall },
 ];
 
 export default function DashboardLayout() {
@@ -61,7 +62,7 @@ export default function DashboardLayout() {
 
   const nav = (
     <nav className="ts-dash-nav" aria-label="Dashboard sections">
-      {SECTIONS.map(({ to, label, index, icon: Icon, end }) => (
+      {SECTIONS.map(({ to, label, icon: Icon, end }) => (
         <NavLink
           key={to}
           to={to}
@@ -70,9 +71,6 @@ export default function DashboardLayout() {
         >
           <Icon className="ts-dash-link-icon" strokeWidth={1.6} aria-hidden="true" />
           <span className="ts-dash-link-label">{label}</span>
-          <span className="ts-dash-link-index" aria-hidden="true">
-            {index}
-          </span>
         </NavLink>
       ))}
     </nav>

@@ -82,9 +82,6 @@ export default function DigitalGrowth() {
                 className="group/trigger flex w-full items-center justify-between gap-6 rounded-none px-0 py-7 text-left transition-colors duration-500 hover:bg-transparent sm:py-9 [&>svg]:hidden"
               >
                 <span className="flex flex-1 items-baseline gap-5 sm:gap-8">
-                  <span className="ts-label shrink-0 text-ash-dim transition-colors duration-300 group-aria-expanded/trigger:text-signal">
-                    {reg.id}
-                  </span>
                   <span className="ts-display-tight text-[clamp(2rem,7vw,5rem)] text-ink transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover/trigger:translate-x-2">
                     {reg.title}
                   </span>

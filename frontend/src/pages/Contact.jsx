@@ -1,9 +1,35 @@
-import { useRef } from "react";
+import { lazy, Suspense, useCallback, useEffect, useRef, useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import { gsap, useGSAP, prefersReducedMotion } from "@/lib/gsap";
 import HoverImageReveal from "@/components/contact/HoverImageReveal";
 import ContactForm from "@/components/contact/ContactForm";
+import BookCallCta from "@/components/contact/BookCallCta";
 import { SystemLabel } from "@/components/ui/SystemLabel";
 import usePageMeta from "@/hooks/usePageMeta";
+
+/**
+ * The booking popup is a dynamic import behind the button, for the same reason
+ * the chat panel is: a visitor who only sends a brief downloads none of it —
+ * not the calendar, not the country table, not the popup's stylesheet.
+ */
+const BookCallModal = lazy(() => import("@/components/booking/BookCallModal"));
+
+/** Matches the exit keyframes in styles/booking.css. The modal stays mounted
+ *  this long after close is requested so the exit can actually play. */
+const BOOKING_EXIT_MS = 190;
+
+/**
+ * How long /contact#book-call waits before opening the popup.
+ *
+ * The route wipe clears at about 1.1s and the entrance timeline is still
+ * printing the statement underneath it. Opening on mount would pop the dialog
+ * over a black panel; opening here lets the page arrive first, so the deep
+ * link reads as "the page loaded, then it offered you the popup" rather than
+ * as a jump. Nothing about the entrance timeline is touched either way — this
+ * is a timer beside it, not a step inside it.
+ */
+const DEEP_LINK_DELAY_MS = 1300;
+const DEEP_LINK_DELAY_REDUCED_MS = 320;
 
 /**
  * The five ways in.
@@ -33,6 +59,63 @@ export default function Contact() {
   });
 
   const root = useRef(null);
+
+  /**
+   * The popup's open state — "closed" | "open" | "closing".
+   *
+   * Three states rather than a boolean, because the exit needs a frame of its
+   * own: unmounting on the click would make the panel vanish instead of
+   * leaving. Same shape as <AIChatLauncher>, for the same reason.
+   *
+   * This is the ONLY state this page gained. The entrance timeline below is
+   * untouched, and nothing in it reads or writes any of it.
+   */
+  const [booking, setBooking] = useState("closed");
+  const bookingTrigger = useRef(null);
+  const exitTimer = useRef(null);
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  const openBooking = useCallback(() => {
+    clearTimeout(exitTimer.current);
+    setBooking("open");
+  }, []);
+
+  const closeBooking = useCallback(() => {
+    setBooking((current) => (current === "open" ? "closing" : current));
+    // Focus returns to the button it came from, on the close request rather
+    // than after the exit — otherwise a keyboard user is stranded on a
+    // detached element for the length of the animation.
+    bookingTrigger.current?.focus();
+    clearTimeout(exitTimer.current);
+    exitTimer.current = setTimeout(() => setBooking("closed"), BOOKING_EXIT_MS);
+  }, []);
+
+  useEffect(() => () => clearTimeout(exitTimer.current), []);
+
+  /**
+   * /contact#book-call — the deep link the assistant hands out.
+   *
+   * Keyed on the hash rather than on mount, so it works both ways: arriving
+   * from another route (the page mounts with the hash) and clicking the same
+   * link while already on /contact (only the hash changes, and this page does
+   * not remount). The hash is cleared once it has been used, which is what
+   * lets the assistant offer the button a second time after the popup has
+   * been closed — an unchanged location fires no effect.
+   */
+  useEffect(() => {
+    if (location.hash !== "#book-call") return undefined;
+
+    const delay = prefersReducedMotion() ? DEEP_LINK_DELAY_REDUCED_MS : DEEP_LINK_DELAY_MS;
+    const timer = setTimeout(() => {
+      openBooking();
+      // Replaces the URL without a navigation. RouteTransition keys its wipe
+      // on pathname only, so this cannot trigger one.
+      navigate(location.pathname, { replace: true });
+    }, delay);
+
+    return () => clearTimeout(timer);
+  }, [location.hash, location.pathname, navigate, openBooking]);
 
   useGSAP(
     () => {
@@ -175,9 +258,32 @@ export default function Contact() {
             />
 
             <ContactForm />
+
+            {/* The secondary way in. `data-c-field` is the page's existing
+                entrance hook, reused rather than extended: the timeline's
+                stagger is from-start, so the three fields above keep their
+                exact original delays and this simply lands one step after
+                them. Not one line of the timeline changed to accommodate it. */}
+            <div data-c-field>
+              <BookCallCta onOpen={openBooking} buttonRef={bookingTrigger} />
+            </div>
           </div>
         </div>
       </div>
+
+      {/*
+        The popup renders into document.body through a portal, so it is a
+        sibling of this section rather than a descendant — outside its
+        `overflow-hidden`, outside its GSAP scope, and unable to affect its
+        layout or its timeline. No fallback: the chunk is a few kilobytes on
+        the same origin, and a spinner that flashes for one frame is worse
+        than nothing.
+      */}
+      {booking !== "closed" && (
+        <Suspense fallback={null}>
+          <BookCallModal state={booking} onClose={closeBooking} />
+        </Suspense>
+      )}
     </section>
   );
 }

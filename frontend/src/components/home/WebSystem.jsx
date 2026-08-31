@@ -137,12 +137,11 @@ export default function WebSystem() {
 
                     <div data-row-text>
                       <div className="flex items-baseline gap-4">
-                        <span className="ts-label text-ash-dim tabular-nums">{b.id}</span>
                         <h3 className="ts-display-wide text-[1.15rem] text-ink sm:text-[1.45rem]">
                           {b.name}
                         </h3>
                       </div>
-                      <p className="ts-body mt-2.5 max-w-lg pl-10 text-[0.93rem] text-ash">
+                      <p className="ts-body mt-2.5 max-w-lg text-[0.93rem] text-ash">
                         {b.body}
                       </p>
 

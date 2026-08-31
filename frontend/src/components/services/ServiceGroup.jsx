@@ -67,9 +67,8 @@ export default function ServiceGroup({ group, zone = "paper" }) {
           <div className="col-span-12 lg:col-span-4">
             <div className="lg:sticky lg:top-32">
               <div className="flex items-baseline gap-4">
-                <span className="ts-label text-signal">{group.id}</span>
                 <span className={cn("ts-label", ink ? "text-white/40" : "text-ash")}>
-                  / {group.tag}
+                  {group.tag}
                 </span>
               </div>
 
@@ -103,7 +102,7 @@ export default function ServiceGroup({ group, zone = "paper" }) {
           {/* ── entries ────────────────────────────────────────────── */}
           <div className="col-span-12 mt-9 lg:col-span-8 lg:mt-0">
             <ul className={cn("border-t", ink ? "border-white/16" : "border-hair")}>
-              {group.entries.map((entry, i) => (
+              {group.entries.map((entry) => (
                 <li
                   key={entry.name}
                   data-entry
@@ -119,15 +118,6 @@ export default function ServiceGroup({ group, zone = "paper" }) {
                   />
 
                   <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:gap-10">
-                    <span
-                      className={cn(
-                        "ts-label shrink-0 tabular-nums lg:w-12",
-                        ink ? "text-white/35" : "text-ash-dim",
-                      )}
-                    >
-                      {String(i + 1).padStart(2, "0")}
-                    </span>
-
                     <div className="flex-1">
                       <h3
                         className={cn(

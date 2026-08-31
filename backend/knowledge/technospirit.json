@@ -1,0 +1,131 @@
+{
+  "_meta": {
+    "note": "Verified facts only. Every value here was read out of the TechnoSpirit site source; nothing is invented. If a visitor asks for something not in this file, the assistant must say it does not have it and point at the contact details. Contact details are NOT stored here — they are injected from server environment at request time.",
+    "sources": [
+      "frontend/src/pages/Services.jsx",
+      "frontend/src/pages/About.jsx",
+      "frontend/src/pages/WhyUs.jsx",
+      "frontend/src/components/about/MissionVision.jsx",
+      "frontend/src/components/about/Disciplines.jsx",
+      "frontend/src/components/about/Principles.jsx",
+      "frontend/src/components/why-us/Reasons.jsx",
+      "frontend/src/components/why-us/NoList.jsx",
+      "frontend/src/components/home/Process.jsx",
+      "frontend/src/components/home/Manifesto.jsx"
+    ]
+  },
+
+  "company": {
+    "name": "TechnoSpirit",
+    "what_we_are": "A technology company working across four disciplines that most businesses are forced to buy separately — engineering, design, AI and growth — and that only work properly when they are decided together.",
+    "what_we_build": "The digital infrastructure businesses actually run on. Websites that carry the work. AI that removes the repetition. Growth systems that keep the pipeline full.",
+    "mission": "Help businesses use genuinely powerful technology without inheriting unnecessary complexity.",
+    "vision": "Create digital systems capable of operating, adapting and scaling globally.",
+    "disciplines": [
+      { "name": "Technology", "body": "Engineering that holds up — architecture, performance, security and the unglamorous parts that decide whether a system lasts." },
+      { "name": "Design", "body": "Interfaces built around how people actually read, decide and act. Hierarchy before decoration, always." },
+      { "name": "AI", "body": "Automation and agents applied where they remove real work, and deliberately left out where they do not." },
+      { "name": "Growth", "body": "Content, campaigns and measurement — so what gets built keeps meeting the people it was built for." }
+    ]
+  },
+
+  "positioning": {
+    "statement": "Three groups of capability that are normally sold by three different companies. Here they are decided together, which is the only way the handoffs stop costing you anything.",
+    "working_style": "Built without borders — async by default, documented as we go, and built to work across time zones without waiting for one shared working day.",
+    "refusals": [
+      { "title": "No invented metrics", "body": "We will not quote numbers we cannot show you the source of." },
+      { "title": "No borrowed logos", "body": "Client marks appear on the site when there are clients who have agreed to appear there." },
+      { "title": "No template resold as custom", "body": "If a template genuinely fits, we will say so — and charge accordingly." },
+      { "title": "No lock-in", "body": "You own the code, the accounts and the infrastructure. Always." },
+      { "title": "No silent handoff", "body": "Nothing gets delivered as a zip file and a good-luck message." }
+    ]
+  },
+
+  "services": {
+    "web": {
+      "lead": "The part of the business that runs whether or not anyone is at a desk.",
+      "entries": [
+        { "name": "Website Creation", "body": "Modern, responsive websites built around how a business actually presents and sells — structure and content decided before styling begins." },
+        { "name": "Responsive Web Design", "body": "Composed for desktop, laptop, tablet and phone as separate design problems, not one layout squeezed through breakpoints." },
+        { "name": "Website Maintenance", "body": "Security patching, dependency updates, performance monitoring and ongoing technical support once the site is live." },
+        { "name": "SEO", "body": "Technical and on-page search optimisation — semantics, performance, crawlability and content structure — for durable organic visibility." },
+        { "name": "Website Dashboard", "body": "A private control surface for the people running the business: analytics, user activity, content management, reports and business statistics in one place.", "includes": ["Analytics", "User Monitoring", "Content Management", "Reports", "Statistics"] },
+        { "name": "Custom Web Solutions", "body": "When an off-the-shelf product would mean changing how the business works, we build the system around the operation instead.", "includes": ["E-Commerce", "LMS", "Online Classes", "CRM", "Booking Systems", "Dashboards", "SaaS", "Custom Business Software"] }
+      ]
+    },
+    "ai": {
+      "lead": "Applied where it removes real work — and deliberately left out where it does not.",
+      "entries": [
+        { "name": "AI Tools Integration", "body": "Modern AI capability connected into the workflows and tools a team already uses, rather than added as another place to log in." },
+        { "name": "Custom AI Automation", "body": "Repetitive operational work — triage, routing, drafting, data entry, follow-up — moved into systems that run without supervision." },
+        { "name": "AI Voice Calling Agents", "body": "Agents that handle real conversations on the phone, in both directions, and escalate to a person the moment that is the right call.", "includes": ["Inbound Calls", "Outbound Calls", "Customer Support", "Lead Qualification", "Follow-Ups", "Appointment Booking", "FAQs"] },
+        { "name": "Voice Agent Dashboards", "body": "Everything the agent did, reviewable: what was said, what it concluded, and what it produced.", "includes": ["Recordings", "Transcripts", "Summaries", "Analytics", "Performance Reports", "Lead Information"] },
+        { "name": "AI Chatbots", "body": "One assistant across the website, WhatsApp and messaging platforms — same knowledge, same tone, available continuously.", "includes": ["Websites", "WhatsApp", "Messaging Platforms", "Support", "Lead Capture", "FAQs", "Conversation Automation", "24/7 Engagement"] }
+      ]
+    },
+    "growth": {
+      "lead": "Building it is half the job. Being found is the other half.",
+      "entries": [
+        { "name": "Social Media Management", "body": "Strategy, content production, scheduling and audience development held to one consistent brand voice across channels.", "includes": ["Strategy", "Content", "Scheduling", "Audience Development", "Brand Consistency"] },
+        { "name": "Meta Ads", "body": "Facebook and Instagram campaigns built for lead generation, then actively managed and optimised against what converts.", "includes": ["Facebook", "Instagram", "Lead Generation", "Campaign Management", "Campaign Optimisation"] },
+        { "name": "Content Creation", "body": "Graphics, video, captions and advertising creative produced as an ongoing system rather than one-off assets.", "includes": ["Graphics", "Videos", "Captions", "Advertising Content", "Digital Assets"] }
+      ]
+    }
+  },
+
+  "process": [
+    { "step": "01", "name": "Discover", "body": "What the business needs to do, who it is for, and what is currently in the way." },
+    { "step": "02", "name": "Design", "body": "Structure, hierarchy and interface — decided before a line of production code exists." },
+    { "step": "03", "name": "Engineer", "body": "Built with performance, accessibility and future change treated as requirements." },
+    { "step": "04", "name": "Test", "body": "Devices, breakpoints, edge cases and real-world conditions before anyone else sees it." },
+    { "step": "05", "name": "Launch", "body": "Deployed, instrumented and handed over with the documentation to run it." },
+    { "step": "06", "name": "Evolve", "body": "Measured, maintained and extended — because launch is a milestone, not a finish line." }
+  ],
+
+  "why_us": [
+    { "title": "Custom solutions", "body": "Nothing is a theme with the colours changed. The system gets shaped to how the business actually operates." },
+    { "title": "Modern engineering", "body": "Current tooling, current standards, and code written to be read by whoever inherits it." },
+    { "title": "Exceptional UI/UX", "body": "Interface quality treated as product quality. Hierarchy, legibility and flow decided deliberately." },
+    { "title": "AI-first development", "body": "Automation considered at design time, not retrofitted." },
+    { "title": "Performance", "body": "Measured, budgeted and defended. Fast is a feature that every other feature depends on." },
+    { "title": "Scalability", "body": "Architected for the traffic and the team you are heading toward, so growth is a configuration change rather than a rebuild." },
+    { "title": "Security awareness", "body": "Dependencies, access, data handling and update discipline treated as ongoing responsibilities." },
+    { "title": "SEO awareness", "body": "Semantics, structure, performance and crawlability built in from the first commit." },
+    { "title": "Responsive communication", "body": "You know what stage the work is in, what is blocked, and what is next. Silence is not part of the process." },
+    { "title": "Global-ready workflow", "body": "Async by default, documented as we go, built to work across time zones." },
+    { "title": "Long-term support", "body": "We stay responsible for what we build. Maintenance, iteration and the second year are part of the conversation from the start." }
+  ],
+
+  "principles": [
+    { "title": "Design for humans.", "body": "Every interface is used by someone in a hurry, on a bad connection, halfway through something else. That is the default we design for." },
+    { "title": "Engineer for scale.", "body": "Decisions get made against where the system is going, not only where it is on launch day." },
+    { "title": "Automate the repetitive.", "body": "If a person does it the same way twice a day, it belongs in software." },
+    { "title": "Build for outcomes.", "body": "Features are a means. The measure is whether the business can do something it could not do before." },
+    { "title": "Think beyond launch.", "body": "Shipping is the point at which the real feedback starts. We plan for the second year, not just the first week." }
+  ],
+
+  "pages": [
+    { "path": "/", "purpose": "Home — what TechnoSpirit builds, across Web, AI and Growth." },
+    { "path": "/about", "purpose": "The four disciplines, the mission and vision, and the five principles." },
+    { "path": "/services", "purpose": "The full service index — Web, AI and Growth with every entry." },
+    { "path": "/why-us", "purpose": "Eleven reasons to work with us, and the five things we refuse to do." },
+    { "path": "/contact", "purpose": "Send a brief. Three fields: name, email and what you need." },
+    { "path": "/capabilities", "purpose": "A scroll-driven demonstration of interface craft. Desktop only." }
+  ],
+
+  "not_known": {
+    "note": "TechnoSpirit has published nothing about the following. The assistant must never state, estimate, imply or illustrate a value for any of them. Direct the visitor to the contact details instead.",
+    "topics": [
+      "pricing, rates, budgets, quotes, cost estimates or ranges",
+      "packages, tiers, plans, retainers or discounts",
+      "project timelines, delivery dates, turnaround or availability",
+      "named clients, case studies, testimonials or portfolio work",
+      "team size, employee count, founders or staff names",
+      "company age, founding date or history",
+      "office address or physical location",
+      "revenue, growth statistics or any performance metric",
+      "partnerships, certifications, awards or accreditations",
+      "guarantees, SLAs, refund or contract terms"
+    ]
+  }
+}

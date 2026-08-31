@@ -42,15 +42,11 @@ export default function NoList() {
         </div>
 
         <Reveal className="mt-9 border-t border-white/16" staggerChildren y={16}>
-          {REFUSALS.map((r, i) => (
+          {REFUSALS.map((r) => (
             <div
               key={r.title}
               className="group/n flex flex-col gap-3 border-b border-white/12 py-7 transition-colors duration-500 hover:bg-white/[0.03] sm:flex-row sm:items-baseline sm:gap-10"
             >
-              <span className="ts-label shrink-0 text-signal tabular-nums sm:w-12">
-                {String(i + 1).padStart(2, "0")}
-              </span>
-
               <h3 className="ts-display-wide flex-1 text-[clamp(1.15rem,3.2vw,1.9rem)] text-white transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover/n:translate-x-1.5">
                 {r.title}
               </h3>

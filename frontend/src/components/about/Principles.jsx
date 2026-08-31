@@ -190,7 +190,6 @@ export default function Principles() {
                       data-index-row
                       className="ts-index-row flex items-baseline gap-3 border-b border-hair py-2"
                     >
-                      <span className="ts-label tabular-nums text-ash-dim">{p.id}</span>
                       <span className="ts-label truncate text-ash">{p.title}</span>
                     </li>
                   ))}
@@ -208,7 +207,6 @@ export default function Principles() {
                 className="border-t border-hair py-7 first:border-t-0 first:pt-0 sm:py-10"
               >
                 <div className="flex items-baseline gap-5">
-                  <span className="ts-label text-signal tabular-nums lg:hidden">{p.id}</span>
                   <h3 className="ts-display-tight text-[clamp(1.9rem,6vw,4rem)] text-ink">
                     {p.title}
                   </h3>

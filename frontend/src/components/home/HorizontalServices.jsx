@@ -108,13 +108,12 @@ function Act({ act, mobile = false }) {
           {/* left column — the verb */}
           <div className="col-span-12 lg:col-span-7">
             <div className="mb-8 flex items-center gap-5">
-              <span className="ts-label text-signal">{act.index}</span>
               <span
                 className={`h-px flex-1 max-w-24 ${ink ? "bg-white/25" : "bg-black/20"}`}
                 aria-hidden="true"
               />
               <SystemLabel className={ink ? "text-white/45" : "text-ash"}>
-                {`SERVICE ${act.index} / 04`}
+                SERVICE
               </SystemLabel>
             </div>
 
@@ -148,10 +147,10 @@ function Act({ act, mobile = false }) {
             </div>
           </div>
 
-          {/* right column — the indexed capability register */}
+          {/* right column — the capability register */}
           <div className="col-span-12 lg:col-span-5 lg:pl-6">
             <ul className={`border-t ${ink ? "border-white/20" : "border-black/15"}`}>
-              {act.items.map((item, i) => (
+              {act.items.map((item) => (
                 <li key={item}>
                   <div
                     className={[
@@ -161,13 +160,6 @@ function Act({ act, mobile = false }) {
                         : "border-black/10 hover:bg-black/[0.03]",
                     ].join(" ")}
                   >
-                    <span
-                      className={`ts-label w-8 shrink-0 tabular-nums transition-colors duration-300 group-hover/item:text-signal ${
-                        ink ? "text-white/35" : "text-ash-dim"
-                      }`}
-                    >
-                      {String(i + 1).padStart(2, "0")}
-                    </span>
                     <span className="ts-body flex-1 text-[0.95rem] sm:text-base">{item}</span>
                     <span
                       aria-hidden="true"

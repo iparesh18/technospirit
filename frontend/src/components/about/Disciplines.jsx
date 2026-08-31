@@ -51,8 +51,6 @@ export default function Disciplines() {
           >
             <div className="ts-shell">
               <div className="flex flex-col gap-5 py-7 lg:flex-row lg:items-center lg:gap-12 lg:py-8">
-                <span className="ts-label w-10 shrink-0 text-signal tabular-nums">{d.id}</span>
-
                 <h3 className="ts-display-tight flex-1 text-[clamp(2.2rem,8vw,6rem)] text-ink transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover/d:translate-x-3 group-hover/d:text-white group-focus-visible/d:text-white">
                   {d.word}
                 </h3>

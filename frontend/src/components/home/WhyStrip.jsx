@@ -44,7 +44,6 @@ export default function WhyStrip() {
               key={r.id}
               className="group/r flex items-start gap-5 border-b border-white/12 py-7 transition-colors duration-500 hover:border-signal"
             >
-              <span className="ts-label mt-1 shrink-0 text-signal tabular-nums">{r.id}</span>
               <div>
                 <h3 className="ts-display-wide text-[1.05rem] text-white sm:text-[1.2rem]">
                   {r.title}
