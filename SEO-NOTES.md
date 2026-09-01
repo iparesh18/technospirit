@@ -17,11 +17,88 @@ Referenced from `frontend/src/pages/NotFound.jsx`.
 | URL inventory | `frontend/public/sitemap.xml` |
 | Share card, 1200×630 | `frontend/public/images/og-technospirit.png` |
 | Static fallback card for non-JS scrapers | `frontend/index.html` |
+| Google Analytics 4 | `frontend/src/lib/analytics.js` |
 
 Canonical origin is `https://technospirit.tech` — https, no `www`, no trailing
 slash — declared once as `SITE_ORIGIN` in `usePageMeta.js` and imported
 everywhere else, so the canonical tags, the sitemap and the JSON-LD `@id`
 values cannot drift apart.
+
+---
+
+## Google Analytics 4
+
+Property `G-V8406FB2FW`. Implementation is `frontend/src/lib/analytics.js`; the
+page_view is fired from `usePageMeta.js`, which is the only place that knows
+when a route's title and canonical URL have settled. The marketing routes are
+`lazy()`, so a tracker keyed on `useLocation()` would fire while the chunk was
+still downloading and report the previous page's title against the new path.
+
+- Inert unless `import.meta.env.PROD` **and** `VITE_GA_MEASUREMENT_ID` are both
+  set. gtag.js is never requested in development.
+- `send_page_view: false` on `config`, so `trackPageView` is the only source of
+  page_view events.
+- Deduped on canonical path, so a re-render or a changed description cannot
+  produce a second hit for one page.
+- `/dashboard/*` is excluded — the operator's own sessions are not audience
+  behaviour, and it is excluded from robots.txt and the sitemap for the same
+  reason. The 404 route **is** tracked: broken inbound links are worth seeing.
+- `page_location` is the canonical URL rather than `window.location.href`, so
+  the trailing-slash duplicates described below cannot split one page across
+  two rows in the reports.
+
+### Required GA4 console change
+
+**Admin → Data streams → Web → Enhanced measurement → Page views → Show
+advanced settings → turn OFF "Page changes based on browser history events".**
+
+That setting is on by default and is currently on for this property. gtag.js
+fetches it at load time and patches `history.pushState`, so every client-side
+navigation sends a *second* page_view — identifiable by `ae=a`, with no
+`page_path`, the raw non-canonical URL, and the previous route's title, since
+it fires before React applies the new one.
+
+`send_page_view: false` does not suppress it: that option governs only the hit
+`config` sends at initialisation. There is no gtag flag for the history
+listener. Until the box is unticked, every SPA navigation is counted twice —
+verified against this property, not inferred from the documentation.
+
+### Where `VITE_GA_MEASUREMENT_ID` is configured
+
+In `frontend/.env.production`, committed to the repo.
+
+That is not the obvious answer, so it is worth stating why a GitHub Actions
+secret is the wrong home for it. Vite inlines `VITE_*` variables **at build
+time**, and `.github/workflows/deploy.yml` does not build on the runner — it
+opens an SSH session and runs `npm run build` on the VPS, from a fresh
+`git reset --hard origin/main`. A repository secret exists only in the runner's
+environment and never reaches that shell, so the build would inline
+`undefined` and analytics would silently disable itself in production.
+
+The heredoc makes this stricter than it looks: the workflow uses
+`ssh … << 'EOF'`, and the quoted delimiter means nothing in the block is
+expanded on the runner. `$VITE_GA_MEASUREMENT_ID` written inside it would be
+evaluated on the VPS, where it is unset.
+
+A GA4 measurement ID is not a secret in any case — it is served to every
+visitor inside the JS bundle. Committing it is honest about what it is.
+
+If you would rather keep it out of the repo, either alternative works:
+
+1. **A file on the VPS.** Create
+   `/var/www/technospirit/technospirit/frontend/.env.production.local` once
+   (`.local` is gitignored, and Vite loads it with higher precedence than
+   `.env.production`). It survives `git reset --hard` because it is untracked.
+2. **Pass it through the deploy.** Add `GA_ID: ${{ secrets.GA_ID }}` to the
+   step's `env:`, switch the heredoc to unquoted `<< EOF` so the runner
+   expands it, and export it before the build:
+   `export VITE_GA_MEASUREMENT_ID='${{ secrets.GA_ID }}'`. Note that unquoting
+   the delimiter makes the runner expand *every* `$` in the block, so the
+   existing script has to be re-checked for shell variables that must stay
+   literal.
+
+Option 1 is the smaller change. The committed file is simpler than either and
+is what is in place.
 
 ---
 
