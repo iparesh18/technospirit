@@ -13,7 +13,7 @@ import usePageMeta from "@/hooks/usePageMeta";
  * someone will make a decision from it.
  */
 export default function Overview() {
-  usePageMeta({ title: "Overview — TechnoSpirit Admin" });
+  usePageMeta({ title: "Overview — TechnoSpirit Admin", noindex: true });
 
   const [stats, setStats] = useState(null);
   const [recent, setRecent] = useState([]);

@@ -459,7 +459,7 @@ export default function Reasons() {
       <div className="ts-ledger-stage ts-shell relative flex flex-col">
         {/* ── header rail ──────────────────────────────────────────── */}
         <div className="flex items-end justify-between gap-6 border-b border-hair pb-5">
-          <SystemLabel>THE CASE / 01—11</SystemLabel>
+          <SystemLabel as="h2">THE CASE / 01—11</SystemLabel>
           <SystemLabel className="hidden sm:inline-flex">VERIFIABLE</SystemLabel>
         </div>
 

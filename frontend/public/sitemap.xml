@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  TechnoSpirit XML Sitemap
+  Canonical origin: https://technospirit.tech (https, no www, no trailing slash)
+
+  Contains every public, indexable, canonical route declared in
+  frontend/src/App.jsx under <MarketingShell>.
+
+  Deliberately excluded:
+    /dashboard, /dashboard/login, /dashboard/inquiries, /dashboard/inquiries/:id,
+    /dashboard/calls, /dashboard/calls/:id  — private admin area
+    /api/*                                  — backend, not HTML
+    the "*" catch-all (404)                 — not a destination
+    trailing-slash and www variants         — non-canonical duplicates
+
+  No <lastmod>, <changefreq> or <priority>: this site has no per-page
+  publication dates to report honestly, and Google ignores the latter two.
+  An inaccurate lastmod is worse than an absent one.
+-->
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>https://technospirit.tech/</loc>
+  </url>
+  <url>
+    <loc>https://technospirit.tech/about</loc>
+  </url>
+  <url>
+    <loc>https://technospirit.tech/services</loc>
+  </url>
+  <url>
+    <loc>https://technospirit.tech/capabilities</loc>
+  </url>
+  <url>
+    <loc>https://technospirit.tech/why-us</loc>
+  </url>
+  <url>
+    <loc>https://technospirit.tech/lab</loc>
+  </url>
+  <url>
+    <loc>https://technospirit.tech/contact</loc>
+  </url>
+</urlset>

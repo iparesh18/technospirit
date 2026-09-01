@@ -2,6 +2,7 @@ import PageOpener from "@/components/layout/PageOpener";
 import ServiceGroup from "@/components/services/ServiceGroup";
 import Marquee from "@/components/ui/Marquee";
 import usePageMeta from "@/hooks/usePageMeta";
+import { siteGraph, webPage, breadcrumbList, serviceCatalog } from "@/lib/structuredData";
 
 const GROUPS = [
   {
@@ -136,12 +137,28 @@ const GROUPS = [
   },
 ];
 
+const NAME = "Services — TechnoSpirit";
+const DESCRIPTION =
+  "Web development, custom web solutions, AI automation, voice agents, chatbots, social media, Meta Ads and content creation.";
+
+/**
+ * The catalogue is derived from GROUPS, not restated alongside it.
+ *
+ * `serviceCatalog` walks the same array that renders the page below, so the
+ * Service names and descriptions in the markup are the ones a visitor reads —
+ * they cannot drift apart, and adding a service to GROUPS adds it to the
+ * structured data without anyone remembering to. That equivalence between
+ * visible content and markup is the thing Google actually checks for.
+ */
+const JSON_LD = [
+  ...siteGraph,
+  webPage({ path: "/services", name: NAME, description: DESCRIPTION, breadcrumb: true }),
+  breadcrumbList({ path: "/services", name: "Services" }),
+  serviceCatalog(GROUPS),
+];
+
 export default function Services() {
-  usePageMeta({
-    title: "Services — TechnoSpirit",
-    description:
-      "Web development, custom web solutions, AI automation, voice agents, chatbots, social media, Meta Ads and content creation.",
-  });
+  usePageMeta({ title: NAME, description: DESCRIPTION, jsonLd: JSON_LD });
 
   return (
     <>

@@ -6,6 +6,20 @@ import ContactForm from "@/components/contact/ContactForm";
 import BookCallCta from "@/components/contact/BookCallCta";
 import { SystemLabel } from "@/components/ui/SystemLabel";
 import usePageMeta from "@/hooks/usePageMeta";
+import { siteGraph, webPage, breadcrumbList } from "@/lib/structuredData";
+
+const NAME = "Contact — TechnoSpirit";
+const DESCRIPTION =
+  "Say the word. Three fields, one brief, and a reply from the people who would actually build it.";
+
+const JSON_LD = [
+  ...siteGraph,
+  {
+    ...webPage({ path: "/contact", name: NAME, description: DESCRIPTION, breadcrumb: true }),
+    "@type": "ContactPage",
+  },
+  breadcrumbList({ path: "/contact", name: "Contact" }),
+];
 
 /**
  * The booking popup is a dynamic import behind the button, for the same reason
@@ -52,11 +66,7 @@ const INTENTS = [
 ];
 
 export default function Contact() {
-  usePageMeta({
-    title: "Contact — TechnoSpirit",
-    description:
-      "Say the word. Three fields, one brief, and a reply from the people who would actually build it.",
-  });
+  usePageMeta({ title: NAME, description: DESCRIPTION, jsonLd: JSON_LD });
 
   const root = useRef(null);
 

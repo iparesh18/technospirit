@@ -10,11 +10,39 @@ import { cn } from "@/lib/utils";
  * to. Genuine sequence numbers (services 01–04, process steps) live on the
  * content itself, where they mean something.
  */
-export function SystemLabel({ children, className }) {
+/**
+ * `as` exists for the heading outline, not for styling.
+ *
+ * Several of these labels are the only thing that names a section — the
+ * sections on /about and /why-us go straight from the page h1 into a run of
+ * h3 item headings, so the label is the missing h2 and the outline reads as
+ * if the items hang off nothing.
+ *
+ * Passing `as="h2"` is purely semantic here. index.css declares
+ * `h1, h2, h3, h4` with one identical rule (font-weight: 800; text-wrap:
+ * balance) and every visual property of this component comes from `ts-label`
+ * and the caller's className, so the rendered result is byte-identical to the
+ * span. Default stays `span`: most labels sit beside a real heading and
+ * promoting those would invent a second one.
+ */
+export function SystemLabel({ children, className, as: Tag = "span" }) {
   return (
-    <span className={cn("ts-label inline-flex items-center text-[var(--fg-muted)]", className)}>
+    <Tag
+      className={cn(
+        // `text-wrap: wrap` is the span's initial value, so it is a no-op in
+        // the default case. It is here because index.css's base rule gives
+        // h1-h4 `text-wrap: balance`, and that is the one declaration in that
+        // rule `ts-label` does not already override — measured, not assumed:
+        // font-weight resolves to 500 either way because Tailwind's utility
+        // layer outranks base, but text-wrap had nothing competing with it.
+        // Pinning it keeps a label's line breaking a property of the label
+        // rather than of whichever tag a caller passes.
+        "ts-label inline-flex items-center text-wrap text-[var(--fg-muted)]",
+        className,
+      )}
+    >
       {children}
-    </span>
+    </Tag>
   );
 }
 

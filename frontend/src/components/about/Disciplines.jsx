@@ -36,7 +36,7 @@ export default function Disciplines() {
       className="relative bg-white ts-act"
     >
       <div className="ts-shell">
-        <SystemLabel className="mb-7">
+        <SystemLabel as="h2" className="mb-7">
           FOUR DISCIPLINES / ONE TEAM
         </SystemLabel>
       </div>

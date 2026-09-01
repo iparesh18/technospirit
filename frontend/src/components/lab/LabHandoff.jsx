@@ -92,7 +92,22 @@ export default function LabHandoff() {
         />
 
         <div data-h-cut className="mt-10 sm:mt-14">
+          {/*
+            `as="h1"`, not the component's default h2.
+
+            /lab had no h1 at all: the restricted screen owns one, but the
+            desktop experience — the version a crawler actually renders — began
+            at h2 and left the document with a heading outline hanging off
+            nothing. This line is the page's primary statement, so it is the
+            heading that should carry the rank.
+
+            Purely semantic. `h1` and `h2` are declared together in index.css
+            (font-weight: 800; text-wrap: balance) and every visual property
+            here comes from .ts-lab-cut and the component's own classes, so
+            nothing about the cutout changes.
+          */}
           <CutoutHeading
+            as="h1"
             lines={["The interface", "is the", "thin part."]}
             src="/lab/handoff.webp"
             className="ts-lab-cut"

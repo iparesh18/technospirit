@@ -1,0 +1,29 @@
+# https://technospirit.tech/robots.txt
+# TechnoSpirit — public marketing site is fully crawlable.
+# Rules below are derived from the actual route table in src/App.jsx
+# and the API mount in backend/app.js (app.use("/api", routes)).
+
+User-agent: *
+Allow: /
+
+# Private / operational surfaces. These are not linked from any public
+# navigation and carry no content that belongs in a search result.
+Disallow: /dashboard
+Disallow: /api/
+
+# Rendering resources stay crawlable on purpose. This site is a React SPA:
+# blocking the JS, CSS, fonts, images or media would leave Googlebot with an
+# empty <div id="root"> and no way to see the page it is indexing.
+Allow: /assets/
+Allow: /images/
+Allow: /video/
+Allow: /*.js$
+Allow: /*.css$
+Allow: /*.woff2$
+Allow: /*.svg$
+Allow: /*.png$
+Allow: /*.jpg$
+Allow: /*.avif$
+Allow: /*.webp$
+
+Sitemap: https://technospirit.tech/sitemap.xml

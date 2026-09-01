@@ -1,5 +1,19 @@
 import { lazy, Suspense } from "react";
 import usePageMeta from "@/hooks/usePageMeta";
+import { siteGraph, webPage, breadcrumbList } from "@/lib/structuredData";
+
+const NAME = "Lab — TechnoSpirit";
+// The original read as pure atmosphere and never said whose lab it was or what
+// it was about, which left both a searcher and a language model with nothing to
+// attach it to. The register is unchanged; the subject is now stated.
+const DESCRIPTION =
+  "A scroll-controlled sequence from TechnoSpirit: a closed system opens, the core lights, and the web, AI and automation running behind the interface become the point.";
+
+const JSON_LD = [
+  ...siteGraph,
+  webPage({ path: "/lab", name: NAME, description: DESCRIPTION, breadcrumb: true }),
+  breadcrumbList({ path: "/lab", name: "Lab" }),
+];
 import useCapabilityDevice from "@/components/capabilities/useCapabilityDevice";
 import LabRestricted from "@/components/lab/LabRestricted";
 
@@ -26,11 +40,7 @@ import LabRestricted from "@/components/lab/LabRestricted";
 const LabExperience = lazy(() => import("@/components/lab/LabExperience"));
 
 export default function Lab() {
-  usePageMeta({
-    title: "Lab — TechnoSpirit",
-    description:
-      "A scroll-controlled sequence: a closed system opens, the core lights, and what runs behind the interface becomes the point.",
-  });
+  usePageMeta({ title: NAME, description: DESCRIPTION, jsonLd: JSON_LD });
 
   const capable = useCapabilityDevice();
 

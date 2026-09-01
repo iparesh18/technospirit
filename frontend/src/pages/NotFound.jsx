@@ -3,9 +3,19 @@ import { SystemLabel } from "@/components/ui/SystemLabel";
 import usePageMeta from "@/hooks/usePageMeta";
 
 export default function NotFound() {
+  /**
+   * noindex is the important part here.
+   *
+   * nginx serves the SPA shell for every unmatched path, so this page is
+   * reached with HTTP 200 — a soft 404, which Google treats as a thin
+   * indexable page rather than a missing one. Until the server returns a real
+   * 404 status (see SEO-NOTES.md), this directive is what keeps unmatched
+   * URLs out of the index.
+   */
   usePageMeta({
-    title: "404 — TechnoSpirit",
+    title: "404 — Page not found — TechnoSpirit",
     description: "That route doesn't resolve.",
+    noindex: true,
   });
 
   return (

@@ -1,5 +1,16 @@
 import { lazy, Suspense } from "react";
 import usePageMeta from "@/hooks/usePageMeta";
+import { siteGraph, webPage, breadcrumbList } from "@/lib/structuredData";
+
+const NAME = "Capabilities — TechnoSpirit";
+const DESCRIPTION =
+  "Human intent and machine precision, meeting at a point. A scroll-controlled study of what TechnoSpirit builds and the engineering under the surface.";
+
+const JSON_LD = [
+  ...siteGraph,
+  webPage({ path: "/capabilities", name: NAME, description: DESCRIPTION, breadcrumb: true }),
+  breadcrumbList({ path: "/capabilities", name: "Capabilities" }),
+];
 import useCapabilityDevice from "@/components/capabilities/useCapabilityDevice";
 import CapabilitiesRestricted from "@/components/capabilities/CapabilitiesRestricted";
 
@@ -25,11 +36,7 @@ const CapabilitiesExperience = lazy(
 );
 
 export default function Capabilities() {
-  usePageMeta({
-    title: "Capabilities — TechnoSpirit",
-    description:
-      "Human intent and machine precision, meeting at a point. A scroll-controlled study of what TechnoSpirit builds: contact, refinement, and the engineering under the surface.",
-  });
+  usePageMeta({ title: NAME, description: DESCRIPTION, jsonLd: JSON_LD });
 
   const capable = useCapabilityDevice();
 

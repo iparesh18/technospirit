@@ -6,11 +6,57 @@
     <meta name="theme-color" content="#000000" />
     <link rel="icon" type="image/png" href="/images/favicon-logo.png" />
     <link rel="apple-touch-icon" href="/images/favicon-logo.png" />
-    <title>TechnoSpirit — Digital Infrastructure for What's Next</title>
+    <title>TechnoSpirit — Build. Automate. Scale. Without Borders.</title>
     <meta
       name="description"
-      content="TechnoSpirit builds web platforms, AI automation and digital growth systems for businesses operating across time zones."
+      content="TechnoSpirit engineers websites, AI automation and digital growth systems for businesses, teams and markets across time zones."
     />
+
+    <!--
+      STATIC FALLBACK CARD — deliberately duplicated by usePageMeta at runtime.
+
+      Every tag below is rewritten per route once React mounts, so on a real
+      browser these values are only ever the first frame. They exist for the
+      clients that never get to that frame: Facebook, LinkedIn, WhatsApp,
+      Slack and iMessage scrape the served HTML and do not execute JavaScript,
+      so for them this shell IS the page — at every URL on the site.
+
+      Without these, a link pasted into any of them renders as a bare grey
+      box. With them it renders the site-level card, which is right for the
+      home page and honest everywhere else. It is not a substitute for
+      prerendering; it is the floor beneath it.
+
+      Google is not the audience here: it renders JS before indexing and reads
+      the head as it stands after the render pass, so it sees the per-route
+      tags rather than these.
+    -->
+    <link rel="canonical" href="https://technospirit.tech/" />
+    <meta
+      name="robots"
+      content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1"
+    />
+
+    <meta property="og:site_name" content="TechnoSpirit" />
+    <meta property="og:type" content="website" />
+    <meta property="og:locale" content="en_US" />
+    <meta property="og:url" content="https://technospirit.tech/" />
+    <meta property="og:title" content="TechnoSpirit — Build. Automate. Scale. Without Borders." />
+    <meta
+      property="og:description"
+      content="TechnoSpirit engineers websites, AI automation and digital growth systems for businesses, teams and markets across time zones."
+    />
+    <meta property="og:image" content="https://technospirit.tech/images/og-technospirit.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="TechnoSpirit — Build. Automate. Scale. Without Borders." />
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="TechnoSpirit — Build. Automate. Scale. Without Borders." />
+    <meta
+      name="twitter:description"
+      content="TechnoSpirit engineers websites, AI automation and digital growth systems for businesses, teams and markets across time zones."
+    />
+    <meta name="twitter:image" content="https://technospirit.tech/images/og-technospirit.png" />
 
     <!-- Fonts are self-hosted via @fontsource-variable (imported in index.css),
          so there is no third-party request on the critical path. -->

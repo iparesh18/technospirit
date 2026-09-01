@@ -72,7 +72,7 @@ function callTime(booking) {
  * — one entry in SECTIONS and two routes.
  */
 export default function BookedCalls() {
-  usePageMeta({ title: "Booked calls — TechnoSpirit Admin" });
+  usePageMeta({ title: "Booked calls — TechnoSpirit Admin", noindex: true });
 
   const { id: selectedId } = useParams();
   const navigate = useNavigate();

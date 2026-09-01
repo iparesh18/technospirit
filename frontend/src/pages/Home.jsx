@@ -9,6 +9,25 @@ import Process from "@/components/home/Process";
 import WhyStrip from "@/components/home/WhyStrip";
 import FinalCta from "@/components/home/FinalCta";
 import usePageMeta from "@/hooks/usePageMeta";
+import { siteGraph, webPage } from "@/lib/structuredData";
+
+/**
+ * Module scope, not inline in the component: the graph is a constant, and
+ * building it once means the head effect's dependency never changes on a
+ * re-render of the page.
+ *
+ * The home page carries no BreadcrumbList — it *is* the root, and a
+ * single-item breadcrumb describes nothing.
+ */
+const JSON_LD = [
+  ...siteGraph,
+  webPage({
+    path: "/",
+    name: "TechnoSpirit — Build. Automate. Scale. Without Borders.",
+    description:
+      "TechnoSpirit engineers websites, AI automation and digital growth systems for businesses, teams and markets across time zones.",
+  }),
+];
 
 /**
  * Motion rhythm across the page:
@@ -21,6 +40,7 @@ export default function Home() {
     title: "TechnoSpirit — Build. Automate. Scale. Without Borders.",
     description:
       "TechnoSpirit engineers websites, AI automation and digital growth systems for businesses, teams and markets across time zones.",
+    jsonLd: JSON_LD,
   });
 
   return (

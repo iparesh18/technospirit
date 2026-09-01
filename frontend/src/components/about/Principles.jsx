@@ -134,7 +134,7 @@ export default function Principles() {
     >
       <div className="ts-shell">
         <div className="mb-10 flex items-end justify-between gap-6 border-b border-hair pb-5">
-          <SystemLabel>PRINCIPLES / 01—05</SystemLabel>
+          <SystemLabel as="h2">PRINCIPLES / 01—05</SystemLabel>
           <ScrambleText
             text="NON-NEGOTIABLE"
             className="ts-label hidden text-ash sm:inline-flex"

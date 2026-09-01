@@ -20,7 +20,7 @@ const FILTERS = [{ key: "all", label: "ALL" }, ...STATUS_KEYS.map((k) => ({ key:
  * real URL, so a specific inquiry can be linked, bookmarked and refreshed.
  */
 export default function Inquiries() {
-  usePageMeta({ title: "Inquiries — TechnoSpirit Admin" });
+  usePageMeta({ title: "Inquiries — TechnoSpirit Admin", noindex: true });
 
   const { id: selectedId } = useParams();
   const navigate = useNavigate();

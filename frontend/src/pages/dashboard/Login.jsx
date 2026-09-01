@@ -16,9 +16,23 @@ import usePageMeta from "@/hooks/usePageMeta";
  * density of a tool rather than a landing page.
  */
 export default function Login() {
+  /**
+   * noindex, and robots.txt is not a substitute for it.
+   *
+   * `Disallow: /dashboard` stops the crawl, not the indexing: a disallowed URL
+   * that Google finds referenced anywhere can still be listed, as a bare URL
+   * with no snippet, precisely because the rule forbids fetching the page that
+   * would say otherwise. The meta directive is the one that removes it — and
+   * it only works on a page Google is allowed to fetch, so the two rules are
+   * doing different jobs rather than repeating one.
+   *
+   * This page is also the only dashboard route reachable without a session, so
+   * it is the one that can actually be crawled and the one that most needs it.
+   */
   usePageMeta({
     title: "Admin — TechnoSpirit",
     description: "TechnoSpirit internal dashboard.",
+    noindex: true,
   });
 
   const { status, signIn } = useAuth();
