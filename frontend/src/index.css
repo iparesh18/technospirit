@@ -33,6 +33,14 @@
     --color-ash-dim: #9a9a9a;
     --color-hair: #e4e4e4;        /* hairline on paper */
     --color-smoke: #f4f4f4;
+    /* The one warm value in an otherwise neutral palette, and it exists for
+       exactly one surface: the footer plate that carries the logo. The mark is
+       black type with a red accent and needs a light ground, but pure paper
+       there reads as a hole punched in the footer — and it erases the white
+       dot in the logo's own artwork, which has nowhere else to go. Held light
+       enough that signal-ink still clears AA on it (4.59:1) and ash still
+       clears it for muted text (4.77:1); going any creamier fails both. */
+    --color-cream: #f6f2ea;
 
     /* — Type ——————————————————————————————————— */
     --font-display: "Archivo Variable", "Archivo", "Helvetica Neue", Helvetica, Arial, sans-serif;

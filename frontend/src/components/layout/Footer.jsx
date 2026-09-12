@@ -216,9 +216,22 @@ export default function Footer() {
           through the seam rather than sitting on top of it */}
       <div className="absolute inset-x-0 top-0 z-10 h-px bg-signal/60" aria-hidden="true" />
 
+      {/* The footer has to open on ink, and on /contact the closing statement
+          that normally does that is deliberately absent — which would leave
+          the light plate as the first thing in the footer, butted straight
+          against the white section that ends that page. Two light grounds
+          meeting would erase the cut entirely and the footer would appear to
+          start at the wordmark.
+
+          So /contact gets the space back and nothing else in it. This is the
+          aurora's stage: the seam above, the light falling through it, and
+          the plate closing it off below. Elsewhere the closing statement is
+          already that black lead-in and this renders nothing. */}
+      {onContactPage && <div className="relative h-24 sm:h-32" aria-hidden="true" />}
+
       {/* ── closing statement ─────────────────────────────────────────── */}
       {!onContactPage && (
-      <div className="ts-shell relative border-b border-white/16 pt-16 pb-12 sm:pt-20 sm:pb-14">
+      <div className="ts-shell relative pt-16 pb-12 sm:pt-20 sm:pb-14">
         <div className="ts-grid items-end">
           <div className="col-span-12 lg:col-span-8">
             <SystemLabel className="mb-7 text-white/50">
@@ -249,18 +262,61 @@ export default function Footer() {
       </div>
       )}
 
-      {/* ── capabilities + contact + coverage ─────────────────────────── */}
-      <div className="ts-shell relative border-b border-white/16 py-12">
+      {/* ── the plate: capabilities + contact + the mark ────────────────
+          The one light band in a black footer, and the reason it exists is
+          the mark: the logo is black type with a red accent, so it can only
+          be itself on a light ground. Everything else here follows from that.
+
+          It is a full-bleed *plate*, not a card — edge to edge, zero radius,
+          no shadow, no inset — and it carries `data-zone="paper"`, so the
+          links, hairlines and focus rings inside it re-register to the light
+          ground through the token contract rather than being hand-coloured
+          one by one. That re-registration is what keeps it from reading as a
+          white rectangle dropped on the footer. (The nav's own zone probe
+          never sees it: only the wordmark and baseline sit below the plate,
+          less than a viewport, so the page bottoms out before the plate can
+          reach y=28. The zone here is for the contract, not the header.)
+
+          The ground is `cream`, not paper: a warm off-white rather than the
+          #fff the rest of the site is built on. Pure white here punches a
+          hole in the footer and, more concretely, swallows the white dot that
+          is part of the logo's own artwork — on cream that dot is still a
+          dot.
+
+          Two hard rules bound it and nothing decorates it: black above,
+          black below, the tonal cut *is* the rule. The `border-b` that used
+          to close the band above is gone for the same reason — a white/16
+          hairline sitting 1px above the plate is just grime.
+
+          The aurora dies on this edge. It is pinned to the top of the footer
+          at -z-10 and this plate is opaque, so the light spilling in through
+          the seam is cut off exactly where the plate begins — which is the
+          relationship that makes the transition read as composed. By then it
+          is ~82% of the way through its own mask fade, so the cut lands on
+          light that has nearly finished falling away. */}
+      {/* `--bg` is set inline rather than with an arbitrary-property utility:
+          the zone rules in index.css are unlayered, and unlayered CSS beats
+          anything in @layer utilities regardless of specificity, so the
+          utility form silently lost and the contract kept claiming #fff. */}
+      <div
+        data-zone="paper"
+        style={{ "--bg": "var(--color-cream)" }}
+        className="relative bg-cream text-ink"
+      >
+        <div className="ts-shell py-14 sm:py-16">
         <Reveal className="ts-grid gap-y-10" staggerChildren y={16}>
           <div className="col-span-12 md:col-span-4">
-            <div className="ts-label mb-5 text-signal">CAPABILITIES</div>
+            {/* signal-ink, not signal: #ff2d16 is a 3.7:1 graphics red and
+                these are 11px mono. The palette already carries the darker
+                #d91a05 for exactly this — small red type on a light ground. */}
+            <div className="ts-label mb-5 text-signal-ink">CAPABILITIES</div>
             <ul className="space-y-3">
               {CAPABILITIES.map((link) => (
                 <li key={link.name}>
                   <Link
                     to={link.to}
                     data-cursor="open"
-                    className="group/f relative inline-block text-[0.95rem] text-white/70 transition-colors duration-300 hover:text-white"
+                    className="group/f relative inline-block text-[0.95rem] text-ink/70 transition-colors duration-300 hover:text-ink"
                   >
                     {link.name}
                     <span
@@ -274,21 +330,55 @@ export default function Footer() {
           </div>
 
           <div className="col-span-12 md:col-span-4">
-            <div className="ts-label mb-5 text-signal">CONTACT</div>
-            {/* Real business details land here once provided — no invented data.
-                EMAIL and PHONE are still genuinely unpublished, so they stay
-                marked pending rather than being filled with a plausible guess. */}
-            <ul className="space-y-3 text-[0.95rem] text-white/70">
+            <div className="ts-label mb-5 text-signal-ink">CONTACT</div>
+            {/* Real business details, all three now published. EMAIL and PHONE
+                are live `mailto:`/`tel:` links and carry the same underline
+                sweep as the capabilities column, because they are the same
+                kind of thing — something you can act on. `tel:` gets the
+                unpunctuated E.164 number; the visible text keeps the spacing a
+                person actually reads. */}
+            {/* On ink these rows ran white/35 (2.9:1) and white/40 (3.7:1) —
+                both below AA. `ash` is the palette's muted-on-paper value and
+                lands at 4.77:1 on cream, so the flip to a light ground raises
+                every one of them rather than trading contrast for it. The
+                label/value hierarchy was never carried by those 5% of opacity
+                anyway; it is mono-uppercase against sans, which is untouched. */}
+            <ul className="space-y-3 text-[0.95rem] text-ink/70">
               <li className="flex items-baseline gap-3">
-                <span className="ts-label shrink-0 text-white/35">EMAIL</span>
-                <span className="text-white/40">— pending —</span>
+                <span className="ts-label shrink-0 text-ash">EMAIL</span>
+                {/* min-w-0 so the address can shrink inside the flex row
+                    instead of pushing the column wider than its 4 tracks, and
+                    break-all so it folds rather than bleeding out of the
+                    plate at the 768px breakpoint, where the column is at its
+                    narrowest relative to this string. */}
+                <a
+                  href="mailto:technospiritllc@gmail.com"
+                  data-cursor="open"
+                  className="group/f relative inline-block min-w-0 break-all transition-colors duration-300 hover:text-ink"
+                >
+                  technospiritllc@gmail.com
+                  <span
+                    aria-hidden="true"
+                    className="absolute -bottom-0.5 left-0 h-px w-full origin-right scale-x-0 bg-signal transition-transform duration-400 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover/f:origin-left group-hover/f:scale-x-100"
+                  />
+                </a>
               </li>
               <li className="flex items-baseline gap-3">
-                <span className="ts-label shrink-0 text-white/35">PHONE</span>
-                <span className="text-white/40">— pending —</span>
+                <span className="ts-label shrink-0 text-ash">PHONE</span>
+                <a
+                  href="tel:+919993043909"
+                  data-cursor="open"
+                  className="group/f relative inline-block transition-colors duration-300 hover:text-ink"
+                >
+                  +91 99930 43909
+                  <span
+                    aria-hidden="true"
+                    className="absolute -bottom-0.5 left-0 h-px w-full origin-right scale-x-0 bg-signal transition-transform duration-400 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover/f:origin-left group-hover/f:scale-x-100"
+                  />
+                </a>
               </li>
               <li className="flex items-baseline gap-3">
-                <span className="ts-label shrink-0 text-white/35">BASE</span>
+                <span className="ts-label shrink-0 text-ash">BASE</span>
                 {/* <address> is the element for the contact details of the
                     document it sits in, which is exactly what this is. It is
                     italic by default in every browser, hence not-italic — the
@@ -311,13 +401,24 @@ export default function Footer() {
               closes the band in its place: links, then details, then the
               signature.
 
-              The asset is `logo-footer.jpg` — the new artwork flattened onto
-              pure white, because JPEG carries no alpha. That is also why the
-              `brightness-0 invert` filter that used to sit here is gone: it
-              existed only to recolour a transparent black-on-nothing PNG into
-              a white silhouette, and applied to a white-backed JPEG it would
-              paint the entire rectangle solid white with no logo in it at all.
-              Every size, position and spacing class below is unchanged. */}
+              The asset is genuinely transparent, not faked with a blend mode
+              or a filter. `logo-new.png` ships flattened on a solid slate
+              ground (77,105,112), so it was keyed by solving, per pixel, for
+              the smallest alpha that still leaves a foreground colour inside
+              [0,255] — O = aF + (1-a)B with F in gamut — and then un-mixing
+              F = (O - (1-a)B) / a. That reconstruction is exact over the
+              original ground and, unlike a distance threshold, leaves no
+              slate in the antialiased edges: 78% of the frame is alpha 0 and
+              all four corners are 0, so there is no ghost rectangle at any
+              size. The artwork itself is untouched — same crop, same
+              proportions, same black type, same red, and the soft drop
+              shadow survives as real partial alpha instead of grey pixels.
+
+              Keyed from the 2005px master rather than the 1200px derivative,
+              then resampled once (lanczos3) to 760x297 — 2.5x the 304px the
+              box ever reaches, so it stays crisp at DPR 2 on desktop and
+              DPR 3 on a phone. AVIF 23.1 KB with a WebP 45.6 KB fallback,
+              against the 57 KB opaque JPEG it replaces. */}
           {/* `items-center`, not the flex default.
               A flex item whose cross size is `auto` gets stretched by
               `align-items: stretch`, and that beats `height: auto` — so the
@@ -326,22 +427,66 @@ export default function Footer() {
               cross axis is what lets the intrinsic ratio survive; centring is
               then just where it sits against the taller column. */}
           <div className="col-span-12 flex items-center justify-center md:col-span-4">
-            <img
-              src="/images/logo-footer.jpg"
-              alt=""
-              /* Decorative here on purpose: the wordmark below this band
-                 already carries an sr-only "TechnoSpirit", and a screen reader
-                 should not hear the brand twice in three seconds. */
-              aria-hidden="true"
-              width="1200"
-              height="469"
-              /* Below the fold on every page, and never the LCP element. */
-              loading="lazy"
-              decoding="async"
-              className="h-auto w-[14rem] sm:w-[16rem] md:w-full md:max-w-[19rem]"
-            />
+            {/* The lockup box. It owns the widths the <img> used to carry, so
+                the ™ can be positioned against the artwork rather than against
+                whatever the column happens to be, and it is a query container
+                so the mark is sized in `cqw` — one ratio that holds at 224px,
+                256px and 304px instead of three breakpoint-tuned font sizes
+                that drift apart in between. */}
+            <div className="@container relative w-[14rem] sm:w-[16rem] md:w-full md:max-w-[19rem]">
+              <picture>
+                <source srcSet="/images/logo-footer.avif" type="image/avif" />
+                <img
+                  src="/images/logo-footer.webp"
+                  alt=""
+                  /* Decorative here on purpose: the wordmark below this band
+                     already carries an sr-only "TechnoSpirit", and a screen
+                     reader should not hear the brand twice in three seconds. */
+                  aria-hidden="true"
+                  width="760"
+                  height="297"
+                  /* Below the fold on every page, and never the LCP element. */
+                  loading="lazy"
+                  decoding="async"
+                  className="block h-auto w-full"
+                />
+              </picture>
+
+              {/* ™ — set in type, never baked into the image, so it stays
+                  sharp at any scale and can be corrected without re-cutting
+                  the asset.
+
+                  Both numbers are measured off the alpha channel rather than
+                  eyeballed. The wordmark's ascender line on the right side of
+                  the lockup sits at 35.6% of the frame height and the final
+                  't' is clipped flush to the right edge, so there is no room
+                  beside the mark — the trademark goes above it, right-aligned
+                  to the artwork's own edge and resting just clear of the
+                  ascenders.
+
+                  `bottom` is offset, not naive: ™ is a superscript glyph that
+                  draws in the top third of its em box, so roughly 6.7% of the
+                  frame sits empty between the ink and the bottom of the span.
+                  Positioning the box at the ascender line left an 11px hole
+                  and the mark read as floating. 60.5% puts the *ink* 2.8%
+                  above the letters — measured off the rendered pixels, not
+                  the box model.
+
+                  Percentages and cqw both resolve against the same box as the
+                  image, so the whole relationship is scale-invariant: it is
+                  pinned to the artwork, not to a breakpoint. Verified at 304,
+                  245, 225 and 224px — ink gap 2.5-3.4px, right edge flush to
+                  within 1px at every one. */}
+              <span
+                aria-hidden="true"
+                className="pointer-events-none absolute right-0 bottom-[60.5%] font-sans text-[max(10px,5cqw)] leading-none font-medium text-ink/70 select-none"
+              >
+                ™
+              </span>
+            </div>
           </div>
         </Reveal>
+        </div>
       </div>
 
       {/* ── the wordmark: the signature ───────────────────────────────────

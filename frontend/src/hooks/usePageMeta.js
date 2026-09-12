@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { useLocation } from "react-router-dom";
+import { trackPageView } from "@/lib/analytics";
 
 /**
  * The canonical production origin: https, no www, no trailing slash.
@@ -194,6 +195,24 @@ export default function usePageMeta({
         document.head.appendChild(script);
       });
     }
+
+    /* ── analytics ──────────────────────────────────────────────────────
+       Reported from here, at the end, rather than from a tracker keyed on
+       useLocation() in App.jsx.
+
+       The routes are lazy(), so on a cold navigation React commits the new
+       location while the chunk is still downloading. A tracker watching the
+       location would fire in that gap, when document.title still belongs to
+       the page the visitor just left — the new path recorded against the old
+       title. This effect cannot run before the title it reports, because it
+       is the thing that sets it.
+
+       Every argument is the value already computed above, so the page_view
+       and the canonical tag can never disagree about what this page is. The
+       call is a no-op outside production, and trackPageView dedupes on path,
+       so the extra dependencies in the array below cannot produce a second
+       page_view for one page. */
+    trackPageView({ path, url, title });
 
     return () => {
       // Only the graph is torn down. Title, description, canonical, robots and
