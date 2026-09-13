@@ -2,6 +2,7 @@ import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import MaskText from "@/components/ui/MaskText";
 import Reveal from "@/components/ui/Reveal";
+import BrandLogo from "@/components/brand/BrandLogo";
 import { ActionLink } from "@/components/ui/ActionLink";
 import { SystemLabel } from "@/components/ui/SystemLabel";
 import Magnet from "@/components/motion/Magnet";
@@ -427,63 +428,34 @@ export default function Footer() {
               cross axis is what lets the intrinsic ratio survive; centring is
               then just where it sits against the taller column. */}
           <div className="col-span-12 flex items-center justify-center md:col-span-4">
-            {/* The lockup box. It owns the widths the <img> used to carry, so
-                the ™ can be positioned against the artwork rather than against
-                whatever the column happens to be, and it is a query container
-                so the mark is sized in `cqw` — one ratio that holds at 224px,
-                256px and 304px instead of three breakpoint-tuned font sizes
-                that drift apart in between. */}
-            <div className="@container relative w-[14rem] sm:w-[16rem] md:w-full md:max-w-[19rem]">
-              <picture>
-                <source srcSet="/images/logo-footer.avif" type="image/avif" />
-                <img
-                  src="/images/logo-footer.webp"
-                  alt=""
-                  /* Decorative here on purpose: the wordmark below this band
-                     already carries an sr-only "TechnoSpirit", and a screen
-                     reader should not hear the brand twice in three seconds. */
-                  aria-hidden="true"
-                  width="760"
-                  height="297"
-                  /* Below the fold on every page, and never the LCP element. */
-                  loading="lazy"
-                  decoding="async"
-                  className="block h-auto w-full"
-                />
-              </picture>
+            {/* The lockup owns the widths the <img> used to carry, so the ™
+                inside it is positioned against the artwork rather than against
+                whatever the column happens to be. <BrandLogo> holds the ™'s
+                geometry and the navbar draws the same component, so the mark
+                is placed once for the whole site; the two things that are
+                genuinely local are which cut of the artwork to load and what
+                colour the mark takes.
 
-              {/* ™ — set in type, never baked into the image, so it stays
-                  sharp at any scale and can be corrected without re-cutting
-                  the asset.
+                No size override here: the footer's own 5cqw is the component's
+                default, which is the ratio the placement was measured at —
+                verified at 304, 245, 225 and 224px, ink gap 2.5-3.4px, right
+                edge flush to within 1px at every one.
 
-                  Both numbers are measured off the alpha channel rather than
-                  eyeballed. The wordmark's ascender line on the right side of
-                  the lockup sits at 35.6% of the frame height and the final
-                  't' is clipped flush to the right edge, so there is no room
-                  beside the mark — the trademark goes above it, right-aligned
-                  to the artwork's own edge and resting just clear of the
-                  ascenders.
+                Decorative on purpose: the wordmark below this band already
+                carries an sr-only "TechnoSpirit", and a screen reader should
+                not hear the brand twice in three seconds. Below the fold on
+                every page, and never the LCP element, so it loads lazily.
 
-                  `bottom` is offset, not naive: ™ is a superscript glyph that
-                  draws in the top third of its em box, so roughly 6.7% of the
-                  frame sits empty between the ink and the bottom of the span.
-                  Positioning the box at the ascender line left an 11px hole
-                  and the mark read as floating. 60.5% puts the *ink* 2.8%
-                  above the letters — measured off the rendered pixels, not
-                  the box model.
-
-                  Percentages and cqw both resolve against the same box as the
-                  image, so the whole relationship is scale-invariant: it is
-                  pinned to the artwork, not to a breakpoint. Verified at 304,
-                  245, 225 and 224px — ink gap 2.5-3.4px, right edge flush to
-                  within 1px at every one. */}
-              <span
-                aria-hidden="true"
-                className="pointer-events-none absolute right-0 bottom-[60.5%] font-sans text-[max(10px,5cqw)] leading-none font-medium text-ink/70 select-none"
-              >
-                ™
-              </span>
-            </div>
+                On the cream plate the mark is ink at 70% — the same weight
+                against the plate that the links beside it carry, so it reads
+                as part of the artwork rather than as a second element. */}
+            <BrandLogo
+              asset="footer"
+              loading="lazy"
+              decoding="async"
+              className="w-[14rem] sm:w-[16rem] md:w-full md:max-w-[19rem]"
+              markClassName="text-ink/70"
+            />
           </div>
         </Reveal>
         </div>

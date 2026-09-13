@@ -4,6 +4,7 @@ import { Dialog as DialogPrimitive } from "radix-ui";
 import { ArrowUpRight } from "lucide-react";
 import { gsap, ScrollTrigger, useGSAP } from "@/lib/gsap";
 import useWorldClock from "@/hooks/useWorldClock";
+import BrandLogo from "@/components/brand/BrandLogo";
 import { cn } from "@/lib/utils";
 
 export const NAV_ITEMS = [
@@ -72,6 +73,56 @@ function NavItem({ item }) {
         </>
       )}
     </NavLink>
+  );
+}
+
+/* -------------------------------------------------------------------------- */
+/*  One copy of the lockup inside the wordmark's rollover box                  */
+/* -------------------------------------------------------------------------- */
+/**
+ * Both halves of the rollover draw the whole lockup — artwork *and* ™ — so the
+ * mark travels with the wordmark instead of hanging in the air over it. A
+ * static ™ would have been left alone above empty space for the middle of the
+ * transition: at the ™'s height the outgoing copy has already carried the
+ * letters past it and the incoming copy has not arrived yet.
+ *
+ * `--ts-tm-size` overrides <BrandLogo>'s proportional default. The navbar
+ * lockup is 123-164px wide against the footer's 224-304, and 5cqw of that is
+ * 6.1-8.2px — the ratio is right but it lands under the size where ™ still
+ * reads as three letterforms rather than a smudge, so the floor is raised from
+ * 10px to 7px. The proportional term still drives every size above it, which
+ * is what keeps the phone's mark smaller than the desktop's.
+ *
+ * The ™ is type, so it takes the header's foreground colour and follows the
+ * ink/paper zone on its own. The artwork can't: it is black type with a red
+ * accent and would disappear against black, so on ink grounds it is filtered
+ * to a white silhouette instead — `brightness-0 invert` is the direct analogue
+ * of the white-on-ink colour, and Tailwind composes brightness before invert,
+ * so it lands on white rather than on an inverted red. That filter stays on
+ * the image alone: applied to the ™ as well it would invert the white the zone
+ * just gave it straight back to black.
+ *
+ * Full-strength `currentColor`, where the footer's mark is ink at 70%. The
+ * footer's is 15px and a tint is what keeps it quiet; this one is 7px, where
+ * the same tint stops being restraint and starts being illegibility — most of
+ * a 7px glyph is antialiasing, so a quarter off the colour takes far more than
+ * a quarter off what actually reaches the eye. Averaged over every pixel the
+ * mark paints on the paper zone at 390px, 75% measured 2.81:1 against the
+ * ground; full strength measures 4.42:1, with the solid strokes at 18.9:1.
+ * Here the size alone is what makes the mark secondary.
+ */
+function NavMark({ onInk, alt, className }) {
+  return (
+    <BrandLogo
+      asset="nav"
+      alt={alt}
+      className={cn(
+        "h-full transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] [--ts-tm-size:max(7px,5cqw)]",
+        className,
+      )}
+      imgClassName={onInk ? "brightness-0 invert" : undefined}
+      markClassName="text-current"
+    />
   );
 }
 
@@ -288,8 +339,8 @@ export default function Nav() {
               rollover needs a box of its own: the second copy rides in from
               below on `translate-y-full`, which only resolves against a height
               the glyphs used to supply. Both copies are sized off that height
-              with `w-auto` + `object-contain`, so the source can never be
-              stretched.
+              alone — <BrandLogo> carries the artwork's ratio, so the width
+              follows and the source can never be stretched.
 
               The art is `logo-nav.png`, generated from `logo-new.png` — which
               ships as an opaque PNG on a slate ground, so the ground is keyed
@@ -303,34 +354,18 @@ export default function Nav() {
               it, so it — not the
               START A PROJECT / MENU buttons — sets the bar's height.
 
-              On ink grounds the mark is filtered to a white silhouette. The
-              artwork is black type with a red accent and would otherwise
-              disappear against black; `brightness-0 invert` is the direct
-              analogue of the white-on-ink colour the text carried, and Tailwind
-              composes brightness before invert, so it lands on white rather
-              than on an inverted red.
+              The ™ is absolutely positioned inside each lockup and lands in
+              the transparent band above the letters, so it adds nothing to
+              this box in either axis: the bar's height and the gap to
+              START A PROJECT / MENU are exactly what they were without it.
+              See <NavMark> for the ink-zone colour and the size floor, and
+              <BrandLogo> for where the mark sits against the artwork.
             */}
             <span className="relative block h-12 overflow-hidden sm:h-14 xl:h-16">
-              <img
-                src="/images/logo-nav.png"
-                alt="TechnoSpirit"
-                width="1200"
-                height="469"
-                className={cn(
-                  "block h-full w-auto object-contain transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover/mark:-translate-y-full",
-                  onInk && "brightness-0 invert",
-                )}
-              />
-              <img
-                src="/images/logo-nav.png"
-                alt=""
-                aria-hidden="true"
-                width="1200"
-                height="469"
-                className={cn(
-                  "absolute top-0 left-0 block h-full w-auto translate-y-full object-contain transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover/mark:translate-y-0",
-                  onInk && "brightness-0 invert",
-                )}
+              <NavMark onInk={onInk} alt="TechnoSpirit" className="group-hover/mark:-translate-y-full" />
+              <NavMark
+                onInk={onInk}
+                className="absolute top-0 left-0 translate-y-full group-hover/mark:translate-y-0"
               />
             </span>
           </Link>
